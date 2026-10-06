@@ -109,6 +109,14 @@ ctest --test-dir build -R test_errors         # run a single test by name
 
 TinyEKF is a git submodule, and configure fails without it. After cloning, run `git submodule update --init`, or clone with `--recursive`.
 
+README layout. It's styled after the CubeSandbox README: centered header, badges, a News table, a Highlights card grid, a comparison table with collapsed details, and a Mermaid architecture diagram. Constraints:
+- **Keep these exactly:** the `## Quick start` heading followed by its ```` ```c ```` block (the build extracts and runs it), and the `<!-- BENCH:START/END -->` markers (`scripts/update_readme_table.py` rewrites between them; they sit inside a `<details>` block).
+- **Charts are generated.** `python3 scripts/make_readme_charts.py` writes `docs/assets/bench-{desktop,embedded}-{light,dark}.svg` from the latest CSV rows, and the README swaps them with `<picture>` for dark mode.
+  - Series colours are fixed per library, in the validated categorical order: blue kalman-c, orange specialized, aqua fixed point, yellow textbook, magenta TinyEKF.
+  - Re-run after recording new results.
+  - `docs/assets/logo.svg` is hand-made: a prediction and a measurement Gaussian fusing into the blue estimate.
+- **Every number in the README prose comes from `results/results.csv` or a test `[report]`.** Update the prose when the numbers change.
+
 Add new tests in `tests/CMakeLists.txt` with `kf_add_test(<name> <source>)`. The examples in `examples/` also run as tests: each exits non-zero if its filter doesn't clearly beat the raw sensor. So does the README's quick start, which `examples/CMakeLists.txt` extracts from the `## Quick start` C block at configure time. Keep that heading and block intact.
 
 API docs: `doxygen` writes `build-docs/html`, with `WARN_AS_ERROR`, so every public symbol must have a `/** */` comment. Doxygen reads the default branch of `#ifdef`s (`float`, no `KF_SPECIALIZE`), so put docs there. Every test links against `kf_test_support`, which contains the scenarios and baselines. `test_stability` runs 2M filter steps and takes a few seconds. Exclude it with `ctest -E stability` for a quick loop. To see the `[report]` lines, use `ctest -V -R 'stability|consistency'`.
