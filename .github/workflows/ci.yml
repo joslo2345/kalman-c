@@ -61,7 +61,7 @@ jobs:
           clang-format --dry-run --Werror
           include/kalman/*.h src/*.c src/*.h tests/unit/*.c tests/comparison/*.c
           tests/scenarios/*.[ch] tests/baselines/*.[ch] bench/*.[ch] bench/runners/*.[ch]
-          embedded/*.[ch] embedded/qemu/*.c
+          embedded/*.[ch] embedded/qemu/*.c examples/*.c
       - name: clang-tidy
         run: |
           for cfg in -UKF_SPECIALIZE "-DKF_SPECIALIZE=KF_SIZE(4,2)" -DKF_USE_DOUBLE; do

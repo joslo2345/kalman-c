@@ -9,6 +9,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(KF_USE_DOUBLE "Use double precision" OFF)
 option(KF_BUILD_TESTS "Build tests" ON)
 option(KF_BUILD_BENCH "Build the comparison benchmarks" OFF)
+option(KF_BUILD_EXAMPLES "Build the worked examples" ON)
 set(KF_MAX_STATE "" CACHE STRING "Override the maximum state size (default 12)")
 set(KF_MAX_MEAS "" CACHE STRING "Override the maximum measurement size (default 6)")
 set(KF_SPECIALIZE "" CACHE STRING
@@ -49,6 +50,10 @@ endif()
 if(KF_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(KF_BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
 
 if(KF_BUILD_BENCH)

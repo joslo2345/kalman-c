@@ -1,16 +1,61 @@
 # kalman-c
 
-An embedded-friendly Kalman filter library in C99.
+Kalman filters for microcontrollers, in plain C99: no heap, no surprises, and numbers to back it up.
 
-> **Status:** in development. The linear KF, EKF and UKF are implemented and tested against TinyEKF and a textbook filter. Benchmarks, the square-root variant and fixed-point support are still to come. See `kalman-c-repo-guide.md` for the full plan.
+> **Status:** v0.1.0. The linear KF, EKF and UKF are implemented and tested against TinyEKF and a textbook filter, in `float` and `double`. The square-root variant and fixed-point support are planned; see `kalman-c-repo-guide.md`.
 
-## Goals
+## Features
 
-- **No dynamic allocation.** All memory is static or caller-provided, so the library runs on microcontrollers.
-- **Numerical robustness.** Covariance updates use the Joseph form or a square-root (Cholesky/UD) form.
-- **Multiple filter types.** Linear KF, EKF and UKF behind a consistent API.
-- **Configurable precision.** Choose `float` or `double` at compile time, with optional fixed-point later.
-- **Diagnostics.** NIS/NEES for checking filter consistency.
+- **No dynamic allocation.** All state lives in a caller-owned `kf_state`. A test checks that the library references no heap function.
+- **Numerically robust.** The Joseph-form covariance update and Cholesky solves keep P symmetric positive-definite. On an ill-conditioned problem, the textbook filter fails at its first step in `float`; kalman-c runs 1,000,000 steps.
+- **Linear KF, EKF and UKF** share one state struct and one calling pattern.
+- **Errors are returned, never silent.** NaN or Inf inputs, a singular innovation covariance, and failing model callbacks all return an error code, and leave the filter state byte-for-byte unchanged.
+- **Configurable at compile time:** `float` or `double`, the maximum sizes, and optional constant-size specializations (`KF_SPECIALIZE`) that match TinyEKF's speed.
+- **Diagnostics.** The normalized innovation squared (NIS) after every update. Monte Carlo tests check NIS and NEES against their chi-squared bounds.
+- **Checked:** clang-tidy, cppcheck, and an enforced subset of MISRA C:2012 (see `scripts/check_misra.py`).
+
+## Quick start
+
+```c
+#include <stdio.h>
+#include "kalman/kalman.h"
+
+int main(void) {
+    const kf_real F[4] = {1, 1, 0, 1}; /* constant velocity, dt = 1 */
+    const kf_real H[2] = {1, 0};       /* measure position only */
+    const kf_real z[3][1] = {{1.1f}, {1.9f}, {3.2f}};
+    kf_state kf;
+
+    kf_init(&kf, 2, 1);            /* 2 states, 1 measurement; zeroes x, P, Q, R */
+    kf.P[0] = kf.P[3] = 10;        /* initial uncertainty */
+    kf.Q[0] = kf.Q[3] = 0.01f;     /* process noise */
+    kf.R[0] = 0.25f;               /* measurement noise */
+
+    for (int k = 0; k < 3; ++k) {
+        if (kf_predict(&kf, F) != KF_OK || kf_update(&kf, z[k], H) != KF_OK) {
+            return 1; /* the filter state is unchanged on error */
+        }
+        printf("position %.2f, velocity %.2f\n", (double)kf.x[0], (double)kf.x[1]);
+    }
+    return 0;
+}
+```
+
+Matrices are flat, row-major arrays: element (i, j) of an n x n matrix is `A[i * n + j]`. For nonlinear models, see the EKF and UKF in `examples/imu_attitude.c`.
+
+## Using it in your project
+
+- **CMake:** `add_subdirectory(kalman-c)` and link the `kalman` target. Options: `KF_USE_DOUBLE`, `KF_MAX_STATE`, `KF_MAX_MEAS` and `KF_SPECIALIZE`.
+- **Single header:** download `kalman_c.h` from the release. Include it everywhere, and in exactly one `.c` file `#define KALMAN_C_IMPLEMENTATION` before including it.
+- **PlatformIO:** the repository includes a `library.json`.
+
+Size the library for your problem with `KF_MAX_STATE` and `KF_MAX_MEAS`. They set the size of `kf_state` and of the stack scratch space, so the defaults (12 and 6) waste RAM on a 4-state filter.
+
+## Examples and documentation
+
+- `examples/constant_velocity.c`: 1D tracking with the linear KF.
+- `examples/imu_attitude.c`: roll and pitch from a gyroscope and an accelerometer, with both the EKF and the UKF.
+- API reference: run `doxygen`, then open `build-docs/html/index.html`.
 
 ## Build and test
 
@@ -21,8 +66,6 @@ cmake -B build                  # add -DKF_USE_DOUBLE=ON for double precision
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
-
-Override the maximum dimensions at compile time with `-DKF_MAX_STATE=<n>` and `-DKF_MAX_MEAS=<m>` in your C flags.
 
 ## Benchmarks
 

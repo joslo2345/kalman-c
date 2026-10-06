@@ -80,7 +80,9 @@ ctest --test-dir build -R test_errors         # run a single test by name
 
 TinyEKF is a git submodule, and configure fails without it. After cloning, run `git submodule update --init`, or clone with `--recursive`.
 
-Add new tests in `tests/CMakeLists.txt` with `kf_add_test(<name> <source>)`. Every test links against `kf_test_support`, which contains the scenarios and baselines. `test_stability` runs 2M filter steps and takes a few seconds. Exclude it with `ctest -E stability` for a quick loop. To see the `[report]` lines, use `ctest -V -R 'stability|consistency'`.
+Add new tests in `tests/CMakeLists.txt` with `kf_add_test(<name> <source>)`. The examples in `examples/` also run as tests: each exits non-zero if its filter doesn't clearly beat the raw sensor. So does the README's quick start, which `examples/CMakeLists.txt` extracts from the `## Quick start` C block at configure time. Keep that heading and block intact.
+
+API docs: `doxygen` writes `build-docs/html`, with `WARN_AS_ERROR`, so every public symbol must have a `/** */` comment. Doxygen reads the default branch of `#ifdef`s (`float`, no `KF_SPECIALIZE`), so put docs there. Every test links against `kf_test_support`, which contains the scenarios and baselines. `test_stability` runs 2M filter steps and takes a few seconds. Exclude it with `ctest -E stability` for a quick loop. To see the `[report]` lines, use `ctest -V -R 'stability|consistency'`.
 
 On this macOS machine, the default SDK (MacOSX27.0, from Command Line Tools) can't be read by Xcode's `ld`, so any link fails with "tapi error: malformed file". Work around it with `export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk` before you configure.
 
