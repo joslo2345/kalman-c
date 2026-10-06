@@ -7,6 +7,10 @@ change the API.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-06
+
+Every step of the design plan is now implemented: a square-root (UD) filter for badly conditioned problems, and a fixed-point filter for microcontrollers without an FPU.
+
 ### Added
 
 - Square-root Kalman filter in UD form (`kf_sqrt.h`: `kf_sr_*`), linear and extended. It uses Bierman's measurement update, applied to measurements whitened by R's UD factors, and Thornton's weighted Gram-Schmidt predict. In `float`, at R = 1e-10, the position variance stays within 2.8e-7 of a float64 reference over 100,000 steps; the Joseph-form filter drifts to 1.4e-4.
@@ -24,6 +28,7 @@ change the API.
 - The KF/EKF predict and update cores re-check `n` and `m` after model callbacks run, since `ctx` may alias the filter state.
 - The benchmark harness reports runners that fail instead of skipping them silently.
 - The firmware's `filter_x` returns raw 32-bit state words, so float and Q-format states print alike.
+- A restyled README: a logo, badges, news, feature highlights, a headline comparison table, and light and dark benchmark charts generated from `results/results.csv` by `scripts/make_readme_charts.py`.
 
 ## [0.1.0] - 2026-10-05
 
@@ -47,4 +52,6 @@ First release.
 - The frozen benchmark scenarios S1–S5, with desktop and emulated Cortex-M4F benchmarks against TinyEKF and a textbook filter.
 - Static analysis: clang-tidy, cppcheck, and an enforced subset of MISRA C:2012.
 
+[Unreleased]: https://github.com/joslo2345/kalman-c/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/joslo2345/kalman-c/releases/tag/v0.2.0
 [0.1.0]: https://github.com/joslo2345/kalman-c/releases/tag/v0.1.0

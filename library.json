@@ -1,6 +1,6 @@
 {
   "name": "kalman-c",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Embedded-friendly Kalman filters (KF, EKF, UKF) in C99 with no dynamic allocation, Joseph-form updates, and errors that leave the filter state unchanged.",
   "keywords": ["kalman", "filter", "ekf", "ukf", "estimation", "sensor-fusion", "embedded"],
   "repository": {

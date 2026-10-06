@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/joslo2345/kalman-c/actions/workflows/ci.yml"><img src="https://github.com/joslo2345/kalman-c/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.1.0"><img src="https://img.shields.io/badge/release-v0.1.0-2a78d6" alt="Release v0.1.0" /></a>
+  <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.2.0"><img src="https://img.shields.io/badge/release-v0.2.0-2a78d6" alt="Release v0.2.0" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/C-C99-555555" alt="C99" />
   <a href="./scripts/check_misra.py"><img src="https://img.shields.io/badge/MISRA_C:2012-subset_enforced-6f42c1" alt="MISRA C:2012 subset enforced" /></a>
@@ -60,15 +60,16 @@ kalman-c is a Kalman filter library for microcontrollers and anything else that 
 <table>
   <tr>
     <td align="right" valign="top" width="110">
-      <a href="./CHANGELOG.md#unreleased">
-        <img src="https://img.shields.io/badge/main-unreleased-fd7e14?style=flat-square" alt="main, unreleased" />
+      <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.2.0">
+        <img src="https://img.shields.io/badge/v0.2.0-2026.10.06-fd7e14?style=flat-square" alt="v0.2.0" />
       </a>
     </td>
     <td valign="top">
       <strong>Square-root and fixed-point filters</strong><br/>
       <b>UD square-root KF/EKF</b>: Bierman update and Thornton predict. In float32 at R = 1e-10, its covariance error is 2.8e-7, against 1.4e-4 for the Joseph form.<br/>
       <b>Fixed-point KF</b>: integer-only, with overflow reported as an error. On a Cortex-M3 without an FPU it runs 1.9× fewer instructions than float on software floating point.<br/>
-      <a href="./CHANGELOG.md#unreleased">Changelog →</a> ·
+      <a href="./CHANGELOG.md#020---2026-10-06">Changelog →</a> ·
+      <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.2.0">Download →</a> ·
       <a href="./include/kalman/kf_sqrt.h">kf_sqrt.h →</a> ·
       <a href="./include/kalman/kf_fixed.h">kf_fixed.h →</a>
     </td>

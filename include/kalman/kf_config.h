@@ -23,7 +23,7 @@
  */
 
 /** Library version as "major.minor.patch". CMake reads its project version from here. */
-#define KALMAN_C_VERSION "0.1.0"
+#define KALMAN_C_VERSION "0.2.0"
 
 #ifndef KF_USE_DOUBLE
 /** Scalar type for every filter quantity: `float`, or `double` with KF_USE_DOUBLE. */
