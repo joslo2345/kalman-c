@@ -6,9 +6,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `kalman-c-repo-guide.md` is the design spec and build plan for this embedded-friendly Kalman filter library in C99. Treat it as the source of truth, and read the relevant step before you implement anything.
 
-Steps 1–5 (scaffolding) and Steps 6.1–6.3 are done: `kf_linalg`, the linear KF, and the EKF are implemented and tested. The UKF header is still an empty placeholder. Next up is Step 6.4 (UKF), followed by the Step 7 baselines and comparison tests.
+Steps 1–5 (scaffolding) and Steps 6.1–6.4 are done: `kf_linalg`, the linear KF, the EKF, and the UKF are implemented and tested. Still to do: Step 6.5 (square-root variant) and 6.6 (fixed-point), the Step 7 baselines and comparison tests, and the Step 8 benchmarks.
 
 The KF and EKF share one covariance implementation. `src/kf_internal.h` declares `kf_core_predict`, which takes a predicted x and F, and `kf_core_update`, which takes an innovation y and H. The public KF and EKF functions only compute those inputs and delegate. As a result, an EKF with linear callbacks is bit-identical to the KF, and `test_ekf` asserts this. EKF callbacks return the model value and its Jacobian together, take a `void *ctx`, and turn a non-zero return into `KF_ERR_MODEL_FAILED`.
+
+The UKF (`src/kf_ukf.c`) is self-contained and doesn't use the `kf_core_*` helpers:
+
+- Its callbacks return only the model value, with no Jacobian.
+- It takes a `kf_ukf_params` (alpha, beta, kappa). Passing NULL uses alpha=1, beta=2, kappa=0, chosen because a small alpha produces a huge negative centre weight that ruins float precision.
+- The update uses `P - K S K^T`, followed by symmetrization and a Cholesky check, since there's no H for a Joseph form.
+- Predict and update both reject a resulting P that isn't positive-definite.
+- Sigma points are stored one per row, `X[j * n + i]`.
 
 Deviations from the guide:
 

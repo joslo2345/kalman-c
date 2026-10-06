@@ -16,6 +16,7 @@ endfunction()
 kf_add_test(test_linalg unit/test_linalg.c)
 kf_add_test(test_linear unit/test_linear.c)
 kf_add_test(test_ekf unit/test_ekf.c)
+kf_add_test(test_ukf unit/test_ukf.c)
 kf_add_test(test_errors unit/test_errors.c)
 
 # --wrap is a GNU ld / lld feature; Apple's linker doesn't support it.
