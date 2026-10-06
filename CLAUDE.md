@@ -68,8 +68,9 @@ Implementation conventions:
 - **To release:**
   1. Bump `KALMAN_C_VERSION` and `library.json`.
   2. Add a `## [X.Y.Z]` section to `CHANGELOG.md`.
-  3. Re-run the benchmarks (desktop and embedded) so the README table matches the released code.
+  3. Re-run the benchmarks (desktop and embedded) so the README table matches the released code, then `python3 scripts/make_readme_charts.py`.
   4. Commit, wait for CI to pass, then push the tag `vX.Y.Z`.
+  5. Re-record the regression baseline from the released code. Download `results/regression-baseline.json` from the `benchmarks` job's `comparison-report` artifact after running `check_regression.py --record`, or delete the file so the next run records it; then commit it.
 
   `.github/workflows/release.yml` then checks that the tag matches the version, builds and tests the single header, and publishes a GitHub Release. The release body is that version's changelog section, and the assets are `kalman_c.h` and the Arduino zip.
 - **Packaging:**
@@ -182,6 +183,13 @@ python3 scripts/run_embedded.py build-fw >> results/results.csv   # needs SDKROO
 - `fw_data.h` holds both float and Q-format (`s2_fx_*`) copies of S2. Its arrays are `static`, so each translation unit has its own copy: never compare pointers into them across files. The fixed-point adapter keeps its own step counter for that reason.
 - Firmware is built with `KF_MAX_STATE=4` and `KF_MAX_MEAS=2`, the same as TinyEKF's fixed 4×2.
 - GCC with `-std=c99` doesn't fuse multiply-adds, so the specialized and generic firmware are bit-identical, unlike on desktop clang.
+
+Speed regression gate (guide Step 7). This is the CI job `benchmarks`, on `ubuntu-24.04` with gcc:
+- **What it measures:** `bench/regress` runs one kalman-c runner on N steps inside `regress_loop()`. `scripts/check_regression.py` counts instructions with valgrind callgrind (`--toggle-collect=regress_loop`), so file parsing and setup are excluded. Ten cases cover the KF, specialized KF, EKF, UKF, UD and fixed point.
+- **When it fails:** a case more than 10% above `results/regression-baseline.json` fails the job. Counts are deterministic: two runs on separate CI machines matched exactly. A deliberate slowdown in `kf_core_predict` failed exactly the six KF/EKF cases.
+- **Wall-clock timings are deliberately not gated:** they vary 10–20% on shared runners.
+- **Recording a baseline:** it can't be done on the Mac, which has no valgrind. With no baseline file, the job records one, uploads it as an artifact and fails, as a bootstrap step.
+- **The report:** `scripts/make_comparison_report.py` builds `comparison.md` from the regression table and every `[report]` line in the `ctest -V` log. It's uploaded as the `comparison-report` artifact and shown in the job summary.
 
 ## Testing and benchmarking model
 
