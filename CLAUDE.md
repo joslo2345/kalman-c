@@ -15,7 +15,7 @@ Done so far:
 
 Still to do: the Step 8 embedded numbers (cycles, flash, RAM on an STM32 board), Steps 9–12, and Steps 6.5 (square-root variant) and 6.6 (fixed-point).
 
-**Known issue:** kalman-c is 4–6× slower per step than TinyEKF, and about 1.5–2× slower than the naive filter (see the README table). TinyEKF gets its speed from compile-time dimensions. Our extra cost is the Joseph form, the Cholesky solve, and the validation and copy passes. The stability test shows the Joseph-form KF stays positive-definite for 1M float steps where the baselines fail, so the square-root variant is not urgent.
+Performance (see the README table): the generic build is about 2–3× slower than TinyEKF. With `KF_SPECIALIZE` listing the sizes in use, it matches or beats TinyEKF (S2: 57 vs 63 ns; S5: 2.3 vs 2.05 µs on an M3 Pro). TinyEKF's speed comes from compile-time dimensions, and `KF_SPECIALIZE` gives us the same. The stability test shows the Joseph-form KF stays positive-definite for 1M float steps where the baselines fail, so the square-root variant is not urgent.
 
 The KF and EKF share one covariance implementation. `src/kf_internal.h` declares `kf_core_predict`, which takes a predicted x and F, and `kf_core_update`, which takes an innovation y and H. The public KF and EKF functions only compute those inputs and delegate. As a result, an EKF with linear callbacks is bit-identical to the KF, and `test_ekf` asserts this. EKF callbacks return the model value and its Jacobian together, take a `void *ctx`, and turn a non-zero return into `KF_ERR_MODEL_FAILED`.
 
@@ -36,6 +36,13 @@ Implementation conventions:
 
 - Filter functions compute into local stack buffers and copy into `*kf` only after the whole step has succeeded. That is how "state unchanged on error" is guaranteed. Keep this pattern in new filters.
 - Never invert S explicitly. Factor it with `kf_cholesky`, then use `kf_cholesky_solve` and `kf_solve_lower`.
+- The matrix kernels live in `src/kf_linalg_impl.h` as `KFI_INLINE` (always-inline) `kfi_*` functions. Filter sources call those. `kf_linalg.c` holds only the public `kf_*` wrappers. Inlining is what lets `KF_SPECIALIZE` propagate constant sizes, so don't call the public wrappers from filter code.
+- The KF/EKF Joseph update runs in O(n²m), without forming `I - KH`: `B = P - K(HP)`, then `B - (BHᵀ)Kᵀ + KRKᵀ`, computing only the upper triangle. Predict also computes only the upper triangle.
+- Performance experiments that failed, measured on M3 Pro (don't retry them without new evidence):
+  - Row-axpy matmul: slower for n ≤ 4, only about 8% faster at n = 15.
+  - Full-matrix axpy update: slower everywhere.
+- `kfi_all_finite` is branchless (`acc += v * 0`, then `acc == acc`). It breaks under `-ffast-math`, so never build the library with fast-math.
+- Specialized and generic builds agree to rounding, not bit-for-bit, because constant sizes change vectorization and FMA contraction. Tests use tolerances, so both pass. The EKF-vs-KF bit-identity test still holds, since both share one core.
 - `kf_linalg` outputs must not alias their inputs, except where the header says they may.
 - Unity's double assertions are enabled (`UNITY_INCLUDE_DOUBLE`). Tests compare through `(double)` with tolerances that depend on precision.
 
@@ -85,6 +92,7 @@ python3 scripts/update_readme_table.py results/results.csv kalman-c
 
 - The executable is at `build-bench/bench/bench`, not `build-bench/bench` as the guide says.
 - `KF_BUILD_BENCH` raises `KF_MAX_STATE` to 15 for S5. The `KF_MAX_STATE` and `KF_MAX_MEAS` cache variables override the defaults in any build.
+- For the specialized column, configure a second bench build with `'-DKF_SPECIALIZE=KF_SIZE(2,1)KF_SIZE(4,2)KF_SIZE(15,6)'`. It reports as `kalman-c-specialized`. Always pass `KF_SPECIALIZE` as a cache variable: in `CMAKE_C_FLAGS`, the Makefile shell silently drops it.
 - Commit the code before running the benchmark, so the recorded commit hash matches the code that produced the numbers.
 
 ## Testing and benchmarking model

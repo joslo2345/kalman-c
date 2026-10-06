@@ -11,6 +11,8 @@ option(KF_BUILD_TESTS "Build tests" ON)
 option(KF_BUILD_BENCH "Build the comparison benchmarks" OFF)
 set(KF_MAX_STATE "" CACHE STRING "Override the maximum state size (default 12)")
 set(KF_MAX_MEAS "" CACHE STRING "Override the maximum measurement size (default 6)")
+set(KF_SPECIALIZE "" CACHE STRING
+    "Compile-time KF/EKF specializations, e.g. KF_SIZE(4,2)KF_SIZE(15,6) (see kf_config.h)")
 
 # Scenario S5 has 15 states and 6 measurements.
 if(KF_BUILD_BENCH AND KF_MAX_STATE STREQUAL "")
@@ -37,6 +39,11 @@ if(NOT KF_MAX_STATE STREQUAL "")
 endif()
 if(NOT KF_MAX_MEAS STREQUAL "")
     target_compile_definitions(kalman PUBLIC KF_MAX_MEAS=${KF_MAX_MEAS})
+endif()
+# Passed through target_compile_definitions, which escapes the parentheses for
+# the shell. Putting it in CMAKE_C_FLAGS silently drops it with Makefiles.
+if(NOT KF_SPECIALIZE STREQUAL "")
+    target_compile_definitions(kalman PRIVATE "KF_SPECIALIZE=${KF_SPECIALIZE}")
 endif()
 
 if(KF_BUILD_TESTS)

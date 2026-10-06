@@ -1,14 +1,8 @@
 #include "kalman/kf_ukf.h"
-#include "kalman/kf_linalg.h"
+#include "kf_linalg_impl.h"
 
 #include <math.h>
 #include <string.h>
-
-#ifdef KF_USE_DOUBLE
-#define KF_SQRT sqrt
-#else
-#define KF_SQRT sqrtf
-#endif
 
 #define KF_MAX_SIGMA (2 * KF_MAX_STATE + 1)
 
@@ -32,7 +26,7 @@ static int make_sigma_points(sigma_set *s, const kf_state *kf, const kf_ukf_para
     if (!(c > 0) || !isfinite(c) || !isfinite(p->beta)) {
         return KF_ERR_INVALID_INPUT;
     }
-    status = kf_cholesky(L, kf->P, n);
+    status = kfi_cholesky(L, kf->P, n);
     if (status != KF_OK) {
         return status;
     }
@@ -112,17 +106,17 @@ int kf_ukf_predict(kf_state *kf, const kf_ukf_params *params, kf_ukf_transition_
             return KF_ERR_MODEL_FAILED;
         }
     }
-    if (!kf_all_finite(Y, s.count * n)) {
+    if (!kfi_all_finite(Y, s.count * n)) {
         return KF_ERR_INVALID_INPUT;
     }
 
     weighted_mean(x, &s, Y, n);
     weighted_cross_cov(P, &s, Y, x, n, Y, x, n);
-    kf_mat_add(P, P, kf->Q, n, n);
-    kf_mat_symmetrize(P, n);
+    kfi_mat_add(P, P, kf->Q, n, n);
+    kfi_mat_symmetrize(P, n);
 
     /* A negative centre weight can push P out of the positive-definite cone. */
-    if (!kf_all_finite(P, n * n) || !kf_cholesky_ok(P, n)) {
+    if (!kfi_all_finite(P, n * n) || !kfi_cholesky_ok(P, n)) {
         return KF_ERR_NOT_POSITIVE_DEFINITE;
     }
     memcpy(kf->x, x, (size_t)n * sizeof *x);
@@ -154,7 +148,7 @@ int kf_ukf_update(kf_state *kf, const kf_real *z, const kf_ukf_params *params,
     }
     const int n = kf->n;
     const int m = kf->m;
-    if (!kf_all_finite(z, m)) {
+    if (!kfi_all_finite(z, m)) {
         return KF_ERR_INVALID_INPUT;
     }
     status = make_sigma_points(&s, kf, params ? params : &default_params);
@@ -168,46 +162,46 @@ int kf_ukf_update(kf_state *kf, const kf_real *z, const kf_ukf_params *params,
             return KF_ERR_MODEL_FAILED;
         }
     }
-    if (!kf_all_finite(Z, s.count * m)) {
+    if (!kfi_all_finite(Z, s.count * m)) {
         return KF_ERR_INVALID_INPUT;
     }
 
     /* Predicted measurement, innovation covariance S, and cross-covariance Pxz */
     weighted_mean(z_hat, &s, Z, m);
     weighted_cross_cov(S, &s, Z, z_hat, m, Z, z_hat, m);
-    kf_mat_add(S, S, kf->R, m, m);
-    kf_mat_symmetrize(S, m);
+    kfi_mat_add(S, S, kf->R, m, m);
+    kfi_mat_symmetrize(S, m);
     weighted_cross_cov(Pxz, &s, s.X, kf->x, n, Z, z_hat, m);
 
-    status = kf_cholesky(L, S, m);
+    status = kfi_cholesky(L, S, m);
     if (status != KF_OK) {
         return status;
     }
 
     /* Gain: S K^T = Pxz^T */
-    kf_mat_transpose(Kt, Pxz, n, m);
-    kf_cholesky_solve(Kt, L, Kt, m, n);
-    kf_mat_transpose(K, Kt, m, n);
+    kfi_mat_transpose(Kt, Pxz, n, m);
+    kfi_cholesky_solve(Kt, L, Kt, m, n);
+    kfi_mat_transpose(K, Kt, m, n);
 
     /* NIS = y^T S^-1 y = |L^-1 y|^2 */
-    kf_mat_sub(y, z, z_hat, m, 1);
-    kf_solve_lower(w, L, y, m, 1);
+    kfi_mat_sub(y, z, z_hat, m, 1);
+    kfi_solve_lower(w, L, y, m, 1);
     for (int i = 0; i < m; ++i) {
         nis += w[i] * w[i];
     }
 
     /* x = x + K y,  P = P - K S K^T */
-    kf_mat_mul(x, K, y, n, m, 1);
-    kf_mat_add(x, kf->x, x, n, 1);
-    kf_mat_mul(KS, K, S, n, m, m);
-    kf_mat_mul(KSKt, KS, Kt, n, m, n);
-    kf_mat_sub(P, kf->P, KSKt, n, n);
-    kf_mat_symmetrize(P, n);
+    kfi_mat_mul(x, K, y, n, m, 1);
+    kfi_mat_add(x, kf->x, x, n, 1);
+    kfi_mat_mul(KS, K, S, n, m, m);
+    kfi_mat_mul(KSKt, KS, Kt, n, m, n);
+    kfi_mat_sub(P, kf->P, KSKt, n, n);
+    kfi_mat_symmetrize(P, n);
 
-    if (!kf_all_finite(x, n) || !kf_all_finite(P, n * n)) {
+    if (!kfi_all_finite(x, n) || !kfi_all_finite(P, n * n)) {
         return KF_ERR_INVALID_INPUT;
     }
-    if (!kf_cholesky_ok(P, n)) {
+    if (!kfi_cholesky_ok(P, n)) {
         return KF_ERR_NOT_POSITIVE_DEFINITE;
     }
     memcpy(kf->x, x, (size_t)n * sizeof *x);

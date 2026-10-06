@@ -10,7 +10,7 @@
  *   S4          KF   steps_to_failure (equal to the scenario length if it never failed)
  *
  * A library that doesn't support a scenario or filter writes no row; the
- * table shows it as n/a.
+ * table shows it as n/a. A build with KF_SPECIALIZE reports as kalman-c-specialized.
  */
 #define _POSIX_C_SOURCE 199309L
 #include <math.h>
@@ -135,13 +135,13 @@ static int load(scenario *sc, const char *dir, const char *id) {
 int main(int argc, char **argv) {
     const char *dir = argc > 2 ? argv[2] : KF_VECTORS_DIR;
     const library linear_libs[] = {
-        {"kalman-c", KALMAN_C_VERSION, "KF", run_ours_kf},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "KF", run_ours_kf},
         {"naive", "textbook", "KF", run_naive},
         {"tinyekf", TINYEKF_COMMIT, "KF", run_tinyekf},
     };
     const library nonlinear_libs[] = {
-        {"kalman-c", KALMAN_C_VERSION, "EKF", run_ours_ekf},
-        {"kalman-c", KALMAN_C_VERSION, "UKF", run_ours_ukf},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "EKF", run_ours_ekf},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "UKF", run_ours_ukf},
         {"tinyekf", TINYEKF_COMMIT, "EKF", run_tinyekf},
     };
     const int nlinear = (int)(sizeof linear_libs / sizeof *linear_libs);

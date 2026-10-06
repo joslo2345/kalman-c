@@ -10,10 +10,19 @@
 #include "kalman/kf_types.h"
 
 /* C (r x c) = A (r x k) * B (k x c) */
-void kf_mat_mul(kf_real *C, const kf_real *A, const kf_real *B, int r, int k, int c);
+void kf_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
+                const kf_real *KF_RESTRICT B, int r, int k, int c);
+
+/* C (r x c) = A (r x k) * B^T, with B stored as (c x k) */
+void kf_mat_mul_abt(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
+                    const kf_real *KF_RESTRICT B, int r, int k, int c);
+
+/* C (r x c) = A^T * B, with A stored as (k x r) and B as (k x c) */
+void kf_mat_mul_atb(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
+                    const kf_real *KF_RESTRICT B, int r, int k, int c);
 
 /* At (c x r) = A (r x c)^T */
-void kf_mat_transpose(kf_real *At, const kf_real *A, int r, int c);
+void kf_mat_transpose(kf_real *KF_RESTRICT At, const kf_real *KF_RESTRICT A, int r, int c);
 
 /* C = A + B and C = A - B on r x c matrices. C may alias A or B. */
 void kf_mat_add(kf_real *C, const kf_real *A, const kf_real *B, int r, int c);

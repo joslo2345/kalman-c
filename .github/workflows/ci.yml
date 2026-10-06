@@ -12,6 +12,7 @@ jobs:
       matrix:
         compiler: [gcc, clang]
         precision: [float, double]
+        specialize: ['', 'KF_SIZE(1,1)KF_SIZE(2,1)KF_SIZE(4,2)']
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,6 +23,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{ matrix.compiler }}
           -DCMAKE_BUILD_TYPE=Debug
           -DKF_USE_DOUBLE=${{ matrix.precision == 'double' && 'ON' || 'OFF' }}
+          "-DKF_SPECIALIZE=${{ matrix.specialize }}"
           -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
           -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
       - name: Build

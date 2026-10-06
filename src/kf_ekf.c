@@ -1,5 +1,5 @@
 #include "kalman/kf_ekf.h"
-#include "kalman/kf_linalg.h"
+#include "kf_linalg_impl.h"
 #include "kf_internal.h"
 
 #include <string.h>
@@ -27,7 +27,7 @@ int kf_ekf_update(kf_state *kf, const kf_real *z, kf_ekf_measurement_fn h, void 
     if (kf == NULL || z == NULL || h == NULL) {
         return KF_ERR_INVALID_INPUT;
     }
-    if (!kf_all_finite(z, kf->m)) {
+    if (!kfi_all_finite(z, kf->m)) {
         return KF_ERR_INVALID_INPUT;
     }
     memset(hx, 0, sizeof hx);
@@ -35,6 +35,6 @@ int kf_ekf_update(kf_state *kf, const kf_real *z, kf_ekf_measurement_fn h, void 
     if (h(hx, H, kf->x, kf->n, kf->m, ctx) != 0) {
         return KF_ERR_MODEL_FAILED;
     }
-    kf_mat_sub(y, z, hx, kf->m, 1);
+    kfi_mat_sub(y, z, hx, kf->m, 1);
     return kf_core_update(kf, y, H);
 }

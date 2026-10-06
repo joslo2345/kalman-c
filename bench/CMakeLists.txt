@@ -23,7 +23,13 @@ add_executable(bench
 target_include_directories(bench PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR} ${KF_TESTS_DIR} ${TINYEKF_DIR}/src)
 target_link_libraries(bench PRIVATE kalman)
+if(KF_SPECIALIZE STREQUAL "")
+    set(KF_BENCH_NAME "kalman-c")
+else()
+    set(KF_BENCH_NAME "kalman-c-specialized")
+endif()
 target_compile_definitions(bench PRIVATE
+    KF_BENCH_NAME="${KF_BENCH_NAME}"
     TINYEKF_COMMIT="${TINYEKF_COMMIT}"
     KF_VECTORS_DIR="${KF_TESTS_DIR}/vectors")
 target_compile_options(bench PRIVATE -Wall -Wextra)
