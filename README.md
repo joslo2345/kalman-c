@@ -354,7 +354,6 @@ flowchart LR
   - [1D tracking](./examples/constant_velocity.c) with the linear KF.
   - [IMU attitude](./examples/imu_attitude.c) from a gyroscope and an accelerometer, with both the EKF and the UKF.
 - 📊 **Benchmarks:** [desktop harness](./bench), [Cortex-M firmware](./embedded) and [results](./results/results.csv).
-- 🗺️ **Design plan:** [`kalman-c-repo-guide.md`](./kalman-c-repo-guide.md), the step-by-step plan this library follows.
 - 📝 **Changelog:** [`CHANGELOG.md`](./CHANGELOG.md).
 
 ## Build and test

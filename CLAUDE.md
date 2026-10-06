@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Current state
 
-`kalman-c-repo-guide.md` is the design spec and build plan for this embedded-friendly Kalman filter library in C99. Treat it as the source of truth, and read the relevant step before you implement anything.
+`kalman-c-repo-guide.md` is the design spec and build plan for this embedded-friendly Kalman filter library in C99. It is kept locally only: it is git-ignored and was removed from the public repository and its history. When it is present, treat it as the source of truth and read the relevant step before you implement anything; the "Steps" referred to below are its steps.
 
 Done so far:
 

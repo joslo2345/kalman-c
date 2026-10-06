@@ -21,3 +21,6 @@ __pycache__/
 
 # Editor caches
 .cache/
+
+# Local design notes, not published
+kalman-c-repo-guide.md

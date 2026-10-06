@@ -96,7 +96,7 @@ def arduino_zip(out_dir, header):
     ver = version()
     props = f"""name=kalman-c
 version={ver}
-author=kalman-c contributors
+author=joslo2345
 maintainer=joslo2345
 sentence=Embedded-friendly Kalman filters (KF, EKF, UKF) with no dynamic allocation.
 paragraph=Joseph-form covariance updates, Cholesky solves, float or double, and errors that leave the filter state unchanged.
