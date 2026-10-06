@@ -88,14 +88,24 @@ KFI_INLINE void kfi_mat_transpose(kf_real *KF_RESTRICT At, const kf_real *KF_RES
 }
 
 KFI_INLINE void kfi_mat_add(kf_real *C, const kf_real *A, const kf_real *B, int r, int c) {
-    for (int i = 0; i < r * c; ++i) {
-        C[i] = A[i] + B[i];
+    /* Separate row and column loops rather than one loop to r * c: the result
+     * is identical, and the static analyzer can then see that every element
+     * is written whenever r and c are positive. */
+    for (int i = 0; i < r; ++i) {
+        for (int j = 0; j < c; ++j) {
+            C[i * c + j] = A[i * c + j] + B[i * c + j];
+        }
     }
 }
 
 KFI_INLINE void kfi_mat_sub(kf_real *C, const kf_real *A, const kf_real *B, int r, int c) {
-    for (int i = 0; i < r * c; ++i) {
-        C[i] = A[i] - B[i];
+    /* Separate row and column loops rather than one loop to r * c: the result
+     * is identical, and the static analyzer can then see that every element
+     * is written whenever r and c are positive. */
+    for (int i = 0; i < r; ++i) {
+        for (int j = 0; j < c; ++j) {
+            C[i * c + j] = A[i * c + j] - B[i * c + j];
+        }
     }
 }
 
