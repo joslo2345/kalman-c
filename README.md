@@ -127,7 +127,7 @@ kalman-c is a Kalman filter library for microcontrollers and anything else that 
   <tr align="center" valign="top">
     <td width="33%">
       <strong>⚡ Fast When Specialized</strong><br/><br/>
-      <code>KF_SPECIALIZE</code> compiles constant-size copies of the core. That beats TinyEKF on the 15-state and float32 4-state scenarios, and stays within 15% of it elsewhere.<br/><br/>
+      <code>KF_SPECIALIZE</code> compiles constant-size copies of the core. That matches TinyEKF: faster on the 15-state scenario, and within about 20% on the smallest problems.<br/><br/>
       <a href="#benchmarks">Benchmarks →</a>
     </td>
     <td width="33%">
@@ -171,13 +171,13 @@ Every library runs the same frozen scenarios with the same precision, initial st
 | **Ill-conditioned S4**<br>*float32, 1M steps* | ❌ fails at step 0 | ✅ survives¹ | **✅ survives** |
 | **Filters** | KF | EKF | **KF · EKF · UKF · UD · fixed point** |
 | **On error** | – | `ekf_update` returns false | **Error code; state unchanged** |
-| **15-state S5**<br>*desktop, float32* | 5.62 µs | 2.07 µs | **1.84 µs** (specialized²) |
+| **15-state S5**<br>*desktop, float32* | 5.14 µs | 1.94 µs | **1.87 µs** (specialized²) |
 | **Instructions per step**<br>*Cortex-M4F, S2* | 4,764 | 6,608 | **3,745** (specialized²) |
 | **Instructions per step**<br>*Cortex-M3, no FPU, S2* | – | 24,811 | **12,576** (fixed point) |
 | **Peak stack**<br>*Cortex-M4F, S2* | 688 B | 740 B | **about 520 B** |
 
 1. TinyEKF survives the frozen R = 1e-8 scenario but fails at step 3 when R = 1e-9 (`test_stability`). S4 uses 1e-8, so the table doesn't favour kalman-c.
-2. `KF_SPECIALIZE` compiles constant-size copies of the core, as TinyEKF always does. The default build is 2–3× slower than TinyEKF. On the 2-state S1, the specialized build is about 10% slower (32 vs 29 ns).
+2. `KF_SPECIALIZE` compiles constant-size copies of the core, as TinyEKF always does. The default build is 2–3× slower than TinyEKF. On the 2-state S1 it is 10–20% slower, depending on the run (33 vs 29 ns in the latest one).
 3. These are a development laptop's timings (Apple M3 Pro, clang 21, `-O3`), indicative to within about 5%. Embedded figures are exact QEMU instruction counts, not cycles.
 4. The textbook KF is [`naive_kf.c`](./tests/baselines/naive_kf.c), written for comparison: explicit inverse and the (I − KH)P update. The "–" cells weren't measured.
 
@@ -219,36 +219,36 @@ In this table, **Ours vs best other** compares the default build with the best b
 |---|---|---|---|---|---|---|---|---|
 | S1 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0006461 | 0.0006499 | n/a |
 | S1 | KF | float32 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 0.2635 | 1.00x |
-| S1 | KF | float32 | time_per_step (ns) | 57.3 | 31.5 | 56.7 | 28.9 | 0.50x |
+| S1 | KF | float32 | time_per_step (ns) | 54.8 | 32.6 | 57.6 | 28.5 | 0.52x |
 | S1 | KF | float64 | max_abs_diff (state) | n/a | n/a | 1.364e-12 | 9.095e-13 | n/a |
 | S1 | KF | float64 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 0.2635 | 1.00x |
-| S1 | KF | float64 | time_per_step (ns) | 61.9 | 35 | 63.1 | 30.6 | 0.49x |
+| S1 | KF | float64 | time_per_step (ns) | 60.2 | 33.5 | 59.9 | 28.1 | 0.47x |
 | S1 | KF | q18 | max_abs_diff (state) | 0.0002443 | 0.0002443 | n/a | n/a | n/a |
 | S1 | KF | q18 | rmse (state) | 0.2635 | 0.2635 | n/a | n/a | n/a |
-| S1 | KF | q18 | time_per_step (ns) | 127.4 | 132.8 | n/a | n/a | n/a |
+| S1 | KF | q18 | time_per_step (ns) | 124.1 | 124.1 | n/a | n/a | n/a |
 | S1 | SRKF | float32 | max_abs_diff (state) | 0.0006342 | 0.0006342 | n/a | n/a | n/a |
 | S1 | SRKF | float32 | rmse (state) | 0.2635 | 0.2635 | n/a | n/a | n/a |
-| S1 | SRKF | float32 | time_per_step (ns) | 58.7 | 62.9 | n/a | n/a | n/a |
+| S1 | SRKF | float32 | time_per_step (ns) | 55.7 | 57.5 | n/a | n/a | n/a |
 | S1 | SRKF | float64 | max_abs_diff (state) | 1.364e-12 | 1.364e-12 | n/a | n/a | n/a |
 | S1 | SRKF | float64 | rmse (state) | 0.2635 | 0.2635 | n/a | n/a | n/a |
-| S1 | SRKF | float64 | time_per_step (ns) | 75.9 | 71.5 | n/a | n/a | n/a |
+| S1 | SRKF | float64 | time_per_step (ns) | 68.3 | 70.9 | n/a | n/a | n/a |
 | S2 | KF | float32 | flash_bytes (bytes) | 1.165e+04 | 1.333e+04 | 1.072e+04 | 1.372e+04 | 0.92x |
 | S2 | KF | float32 | instructions_per_step (instructions) | 5237 | 3745 | 4764 | 6608 | 0.91x |
 | S2 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0006533 | 0.0006056 | n/a |
 | S2 | KF | float32 | ram_bytes (bytes) | 176 | 176 | 268 | 164 | 0.93x |
 | S2 | KF | float32 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
 | S2 | KF | float32 | stack_bytes (bytes) | 520 | 516 | 688 | 740 | 1.32x |
-| S2 | KF | float32 | time_per_step (ns) | 190.2 | 54 | 201.8 | 63.3 | 0.33x |
+| S2 | KF | float32 | time_per_step (ns) | 181.3 | 53.5 | 186.2 | 60.2 | 0.33x |
 | S2 | KF | float32@m3 | flash_bytes (bytes) | 1.402e+04 | n/a | n/a | 1.536e+04 | 1.10x |
 | S2 | KF | float32@m3 | instructions_per_step (instructions) | 2.633e+04 | n/a | n/a | 2.481e+04 | 0.94x |
 | S2 | KF | float32@m3 | ram_bytes (bytes) | 256 | n/a | n/a | 164 | 0.64x |
 | S2 | KF | float32@m3 | stack_bytes (bytes) | 648 | n/a | n/a | 780 | 1.20x |
 | S2 | KF | float64 | max_abs_diff (state) | n/a | n/a | 3.258e-12 | 2.832e-12 | n/a |
 | S2 | KF | float64 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
-| S2 | KF | float64 | time_per_step (ns) | 190.1 | 67.3 | 212 | 58.8 | 0.31x |
+| S2 | KF | float64 | time_per_step (ns) | 184 | 63.7 | 190.6 | 55.5 | 0.30x |
 | S2 | KF | q18 | max_abs_diff (state) | 0.000273 | 0.000273 | n/a | n/a | n/a |
 | S2 | KF | q18 | rmse (state) | 0.266 | 0.266 | n/a | n/a | n/a |
-| S2 | KF | q18 | time_per_step (ns) | 436 | 438.5 | n/a | n/a | n/a |
+| S2 | KF | q18 | time_per_step (ns) | 413.9 | 413.9 | n/a | n/a | n/a |
 | S2 | KF | q20 | flash_bytes (bytes) | 1.657e+04 | n/a | n/a | n/a | n/a |
 | S2 | KF | q20 | instructions_per_step (instructions) | 1.25e+04 | n/a | n/a | n/a | n/a |
 | S2 | KF | q20 | ram_bytes (bytes) | 176 | n/a | n/a | n/a | n/a |
@@ -263,10 +263,10 @@ In this table, **Ours vs best other** compares the default build with the best b
 | S2 | SRKF | float32 | ram_bytes (bytes) | 296 | n/a | n/a | n/a | n/a |
 | S2 | SRKF | float32 | rmse (state) | 0.266 | 0.266 | n/a | n/a | n/a |
 | S2 | SRKF | float32 | stack_bytes (bytes) | 448 | n/a | n/a | n/a | n/a |
-| S2 | SRKF | float32 | time_per_step (ns) | 164.1 | 169.8 | n/a | n/a | n/a |
+| S2 | SRKF | float32 | time_per_step (ns) | 156.7 | 168.2 | n/a | n/a | n/a |
 | S2 | SRKF | float64 | max_abs_diff (state) | 1.364e-12 | 1.364e-12 | n/a | n/a | n/a |
 | S2 | SRKF | float64 | rmse (state) | 0.266 | 0.266 | n/a | n/a | n/a |
-| S2 | SRKF | float64 | time_per_step (ns) | 179.3 | 183.5 | n/a | n/a | n/a |
+| S2 | SRKF | float64 | time_per_step (ns) | 169.6 | 177.1 | n/a | n/a | n/a |
 | S3 | EKF | float32 | nees (-) | 3.958 | 3.958 | n/a | 3.958 | – |
 | S3 | EKF | float32 | rmse (state) | 0.2144 | 0.2144 | n/a | 0.2144 | 1.00x |
 | S3 | EKF | float64 | nees (-) | 3.958 | 3.958 | n/a | 3.958 | – |
@@ -281,16 +281,16 @@ In this table, **Ours vs best other** compares the default build with the best b
 | S4 | SRKF | float64 | steps_to_failure (steps) | 1e+06 | 1e+06 | n/a | n/a | n/a |
 | S5 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0009766 | 0.0009766 | n/a |
 | S5 | KF | float32 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 0.06123 | 1.00x |
-| S5 | KF | float32 | time_per_step (ns) | 4494 | 1844 | 5618 | 2068 | 0.46x |
+| S5 | KF | float32 | time_per_step (ns) | 4206 | 1874 | 5141 | 1941 | 0.46x |
 | S5 | KF | float64 | max_abs_diff (state) | n/a | n/a | 1.364e-12 | 1.364e-12 | n/a |
 | S5 | KF | float64 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 0.06123 | 1.00x |
-| S5 | KF | float64 | time_per_step (ns) | 4812 | 1924 | 5629 | 2209 | 0.46x |
+| S5 | KF | float64 | time_per_step (ns) | 4503 | 1866 | 5153 | 2087 | 0.46x |
 | S5 | SRKF | float32 | max_abs_diff (state) | 0.0003052 | 0.0003052 | n/a | n/a | n/a |
 | S5 | SRKF | float32 | rmse (state) | 0.06123 | 0.06123 | n/a | n/a | n/a |
-| S5 | SRKF | float32 | time_per_step (ns) | 3258 | 3512 | n/a | n/a | n/a |
+| S5 | SRKF | float32 | time_per_step (ns) | 3151 | 3212 | n/a | n/a | n/a |
 | S5 | SRKF | float64 | max_abs_diff (state) | 2.16e-12 | 2.16e-12 | n/a | n/a | n/a |
 | S5 | SRKF | float64 | rmse (state) | 0.06123 | 0.06123 | n/a | n/a | n/a |
-| S5 | SRKF | float64 | time_per_step (ns) | 3600 | 3628 | n/a | n/a | n/a |
+| S5 | SRKF | float64 | time_per_step (ns) | 3614 | 3504 | n/a | n/a | n/a |
 <!-- BENCH:END -->
 
 </details>
