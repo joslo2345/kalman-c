@@ -60,6 +60,7 @@ Implementation conventions:
       - The unsigned offset-and-shift floor: 13,885.
       - Replacing `memcpy` with loops: GCC turns them back into `memcpy` calls. newlib-nano's byte-wise `memcpy` is the real cost.
     - What's left: 64-bit division (`div_wide` → `__udivmoddi4`, about 11%) and `isqrt64` (about 6%).
+    - On x86-64 the guard bits cost about 9% (CI regression case "S2 fixed point (q18)": 8,109 → 8,814, within the 10% gate). That's accepted, because the filter targets 32-bit MCUs. Re-record the regression baseline at the next release so that case gets headroom again.
   - The fixed-point KF and EKF share `fx_core_predict` and `fx_core_update`, which re-check `n` and `m`. The test helper `fx_dot` in `test_fixed.c` mirrors `wide_dot`'s rounding, so the EKF stays bit-identical to the KF. Keep the two in sync.
   - It never right-shifts a negative number (implementation-defined in C99) and never negates a sum (`INT64_MIN`); use `wide_sub`.
   - Every narrowing goes through `narrow()`, which sets `ovf`. Any `ovf` makes the call return `KF_ERR_OVERFLOW` before it commits.

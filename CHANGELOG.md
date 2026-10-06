@@ -20,6 +20,7 @@ change the API.
   - Profiling showed that checking every 64-bit multiply-add for overflow cost almost half the instructions.
   - Dot products now drop a few guard bits per product, so their sums cannot overflow, and check once at the end.
   - The precision cost is at most 2^-32 in real terms, far below the 2^-20 rounding step.
+  - On 64-bit desktop CPUs, which compare 64-bit values in one instruction, the same change costs about 9% more instructions (x86-64 regression check: 8,109 to 8,814). The filter targets 32-bit microcontrollers, so that trade-off is accepted.
 - Stack use of the fixed-point filter rose by 48 bytes (544 to 592 on the M4F), because the KF entry points and the shared core are separate frames.
 - Firmware images are built with `-g`. This adds debug sections only; code, flash and RAM sizes are unchanged.
 
