@@ -24,13 +24,15 @@ typedef enum {
  * elements: element (i, j) of P is `P[i * n + j]`.
  */
 typedef struct {
-    int n;                                  /**< State size, 1..KF_MAX_STATE. */
-    int m;                                  /**< Measurement size, 1..KF_MAX_MEAS. */
-    kf_real x[KF_MAX_STATE];                /**< State estimate (n). */
-    kf_real P[KF_MAX_STATE * KF_MAX_STATE]; /**< State covariance (n x n), symmetric positive-definite. */
+    int n;                   /**< State size, 1..KF_MAX_STATE. */
+    int m;                   /**< Measurement size, 1..KF_MAX_MEAS. */
+    kf_real x[KF_MAX_STATE]; /**< State estimate (n). */
+    kf_real P[KF_MAX_STATE *
+              KF_MAX_STATE]; /**< State covariance (n x n), symmetric positive-definite. */
     kf_real Q[KF_MAX_STATE * KF_MAX_STATE]; /**< Process noise covariance (n x n). */
     kf_real R[KF_MAX_MEAS * KF_MAX_MEAS];   /**< Measurement noise covariance (m x m). */
-    kf_real nis; /**< Normalized innovation squared from the last update; averages m when consistent. */
+    kf_real
+        nis; /**< Normalized innovation squared from the last update; averages m when consistent. */
 } kf_state;
 
 #endif
