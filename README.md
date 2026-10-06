@@ -40,7 +40,8 @@ Every library runs the same frozen scenarios from `tests/vectors/`, with the sam
 
 How to read the table:
 
-- **Ours vs best other** is above 1.00x when kalman-c is better.
+- **kalman-c** is the default build. **kalman-c-specialized** is built with `KF_SPECIALIZE` listing the scenario sizes, which compiles constant-size copies of the KF/EKF core (see `kf_config.h`). TinyEKF always fixes its sizes at compile time.
+- **Ours vs best other** compares the default build with the best baseline, and is above 1.00x when kalman-c is better.
 - **max_abs_diff** is each baseline's largest difference from kalman-c's estimates.
 - **steps_to_failure** is the scenario length if the covariance never lost positive-definiteness.
 - Embedded metrics (cycles, flash, RAM on a Cortex-M4) haven't been measured yet.
@@ -49,39 +50,42 @@ What it shows so far:
 
 - **Accuracy:** kalman-c matches the baselines on every scenario.
 - **Stability:** on S4 in float32, the textbook filter fails at the first step. kalman-c and TinyEKF both survive 1,000,000 steps. TinyEKF fails at R = 1e-9 (see `test_stability`), but the frozen scenario uses 1e-8.
-- **Speed:** kalman-c is currently **4–5× slower than TinyEKF** and about 1.5–2× slower than the textbook filter. Closing that gap is the next piece of work.
+- **Speed:**
+  - The specialized build matches TinyEKF on S2 and is within about 12% on S5, while keeping the Joseph form, input validation, and leaving the state unchanged on error.
+  - On the smallest problem (S1), fixed per-step costs still leave it behind: 1.3× in float32 and 1.8× in float64.
+  - The default build is 2–3× slower than TinyEKF, because its sizes are only known at run time.
 
 <!-- BENCH:START -->
-| Scenario | Filter | Precision | Metric | kalman-c | naive | tinyekf | Ours vs best other |
-|---|---|---|---|---|---|---|---|
-| S1 | KF | float32 | max_abs_diff (state) | n/a | 0.0006256 | 0.0006294 | n/a |
-| S1 | KF | float32 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 1.00x |
-| S1 | KF | float32 | time_per_step (ns) | 130.4 | 59.5 | 29.9 | 0.23x |
-| S1 | KF | float64 | max_abs_diff (state) | n/a | 9.828e-13 | 3.997e-15 | n/a |
-| S1 | KF | float64 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 1.00x |
-| S1 | KF | float64 | time_per_step (ns) | 133.6 | 61.3 | 30.7 | 0.23x |
-| S2 | KF | float32 | max_abs_diff (state) | n/a | 0.0009766 | 0.0009766 | n/a |
-| S2 | KF | float32 | rmse (state) | 0.266 | 0.266 | 0.266 | 1.00x |
-| S2 | KF | float32 | time_per_step (ns) | 347.4 | 196.4 | 63.1 | 0.18x |
-| S2 | KF | float64 | max_abs_diff (state) | n/a | 2.368e-12 | 5.684e-14 | n/a |
-| S2 | KF | float64 | rmse (state) | 0.266 | 0.266 | 0.266 | 1.00x |
-| S2 | KF | float64 | time_per_step (ns) | 316.9 | 205.4 | 75.4 | 0.24x |
-| S3 | EKF | float32 | nees (-) | 3.958 | n/a | 3.958 | – |
-| S3 | EKF | float32 | rmse (state) | 0.2144 | n/a | 0.2144 | 1.00x |
-| S3 | EKF | float64 | nees (-) | 3.958 | n/a | 3.958 | – |
-| S3 | EKF | float64 | rmse (state) | 0.2144 | n/a | 0.2144 | 1.00x |
-| S3 | UKF | float32 | nees (-) | 3.958 | n/a | n/a | n/a |
-| S3 | UKF | float32 | rmse (state) | 0.2144 | n/a | n/a | n/a |
-| S3 | UKF | float64 | nees (-) | 3.958 | n/a | n/a | n/a |
-| S3 | UKF | float64 | rmse (state) | 0.2144 | n/a | n/a | n/a |
-| S4 | KF | float32 | steps_to_failure (steps) | 1e+06 | 0 | 1e+06 | 1.00x |
-| S4 | KF | float64 | steps_to_failure (steps) | 1e+06 | 1e+06 | 1e+06 | 1.00x |
-| S5 | KF | float32 | max_abs_diff (state) | n/a | 4.578e-05 | 4.578e-05 | n/a |
-| S5 | KF | float32 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 1.00x |
-| S5 | KF | float32 | time_per_step (ns) | 8000 | 5340 | 2034 | 0.25x |
-| S5 | KF | float64 | max_abs_diff (state) | n/a | 3.553e-15 | 3.553e-15 | n/a |
-| S5 | KF | float64 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 1.00x |
-| S5 | KF | float64 | time_per_step (ns) | 7956 | 5287 | 2156 | 0.27x |
+| Scenario | Filter | Precision | Metric | kalman-c | kalman-c-specialized | naive | tinyekf | Ours vs best other |
+|---|---|---|---|---|---|---|---|---|
+| S1 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0006236 | 0.0006274 | n/a |
+| S1 | KF | float32 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 0.2635 | 1.00x |
+| S1 | KF | float32 | time_per_step (ns) | 94.5 | 33.5 | 55.8 | 26.4 | 0.28x |
+| S1 | KF | float64 | max_abs_diff (state) | n/a | n/a | 1.364e-12 | 9.095e-13 | n/a |
+| S1 | KF | float64 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 0.2635 | 1.00x |
+| S1 | KF | float64 | time_per_step (ns) | 104.1 | 49.7 | 65.7 | 27.8 | 0.27x |
+| S2 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0005245 | 0.0006514 | n/a |
+| S2 | KF | float32 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
+| S2 | KF | float32 | time_per_step (ns) | 192.9 | 54.4 | 192.5 | 57.2 | 0.30x |
+| S2 | KF | float64 | max_abs_diff (state) | n/a | n/a | 3.258e-12 | 2.832e-12 | n/a |
+| S2 | KF | float64 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
+| S2 | KF | float64 | time_per_step (ns) | 192.4 | 69.1 | 196.7 | 56.5 | 0.29x |
+| S3 | EKF | float32 | nees (-) | 3.958 | 3.958 | n/a | 3.958 | – |
+| S3 | EKF | float32 | rmse (state) | 0.2144 | 0.2144 | n/a | 0.2144 | 1.00x |
+| S3 | EKF | float64 | nees (-) | 3.958 | 3.958 | n/a | 3.958 | – |
+| S3 | EKF | float64 | rmse (state) | 0.2144 | 0.2144 | n/a | 0.2144 | 1.00x |
+| S3 | UKF | float32 | nees (-) | 3.958 | 3.958 | n/a | n/a | n/a |
+| S3 | UKF | float32 | rmse (state) | 0.2144 | 0.2144 | n/a | n/a | n/a |
+| S3 | UKF | float64 | nees (-) | 3.958 | 3.958 | n/a | n/a | n/a |
+| S3 | UKF | float64 | rmse (state) | 0.2144 | 0.2144 | n/a | n/a | n/a |
+| S4 | KF | float32 | steps_to_failure (steps) | 1e+06 | 1e+06 | 0 | 1e+06 | 1.00x |
+| S4 | KF | float64 | steps_to_failure (steps) | 1e+06 | 1e+06 | 1e+06 | 1e+06 | 1.00x |
+| S5 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0009766 | 0.0009766 | n/a |
+| S5 | KF | float32 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 0.06123 | 1.00x |
+| S5 | KF | float32 | time_per_step (ns) | 4748 | 2263 | 5417 | 2019 | 0.43x |
+| S5 | KF | float64 | max_abs_diff (state) | n/a | n/a | 1.364e-12 | 1.364e-12 | n/a |
+| S5 | KF | float64 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 0.06123 | 1.00x |
+| S5 | KF | float64 | time_per_step (ns) | 4400 | 2338 | 5100 | 2113 | 0.48x |
 <!-- BENCH:END -->
 
 ## License
