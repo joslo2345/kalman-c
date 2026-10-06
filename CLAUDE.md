@@ -6,9 +6,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `kalman-c-repo-guide.md` is the design spec and build plan for this embedded-friendly Kalman filter library in C99. Treat it as the source of truth, and read the relevant step before you implement anything.
 
-The scaffolding from guide Steps 1–5 is done: layout, CMake, `kf_config.h`, the public API, the Unity test setup, CI, `.clang-format`, and `scripts/make_table.py`. Only `kf_init` is implemented. `kf_predict` and `kf_update` return `KF_ERR_NOT_IMPLEMENTED`, and the linalg, EKF and UKF headers are empty placeholders. The next work is guide Step 6, in order.
+Steps 1–5 (scaffolding) and Steps 6.1–6.2 are done. `kf_linalg` and the linear KF (`kf_init`, `kf_predict`, `kf_update` with the Joseph form and NIS) are implemented and tested. The EKF and UKF headers are still empty placeholders. Next up is Step 6.3 (EKF), followed by the Step 7 baselines and comparison tests.
 
-One deviation from the guide: the error codes and `kf_state` live in `include/kalman/kf_types.h`, so that every filter header can share them.
+Deviations from the guide:
+
+- The error codes and `kf_state` live in `include/kalman/kf_types.h`, so that every filter header can share them.
+- `kf_config.h` adds `KF_MAX_DIM`, the larger of `KF_MAX_STATE` and `KF_MAX_MEAS`, for sizing square scratch buffers.
+
+Implementation conventions:
+
+- Filter functions compute into local stack buffers and copy into `*kf` only after the whole step has succeeded. That is how "state unchanged on error" is guaranteed. Keep this pattern in new filters.
+- Never invert S explicitly. Factor it with `kf_cholesky`, then use `kf_cholesky_solve` and `kf_solve_lower`.
+- `kf_linalg` outputs must not alias their inputs, except where the header says they may.
+- Unity's double assertions are enabled (`UNITY_INCLUDE_DOUBLE`). Tests compare through `(double)` with tolerances that depend on precision.
 
 ## Non-negotiable design constraints
 

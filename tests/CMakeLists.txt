@@ -3,6 +3,7 @@ FetchContent_Declare(unity
     GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
     GIT_TAG        v2.6.0)
 FetchContent_MakeAvailable(unity)
+target_compile_definitions(unity PUBLIC UNITY_INCLUDE_DOUBLE)
 
 function(kf_add_test name source)
     add_executable(${name} ${source})
@@ -12,6 +13,8 @@ function(kf_add_test name source)
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
+kf_add_test(test_linalg unit/test_linalg.c)
+kf_add_test(test_linear unit/test_linear.c)
 kf_add_test(test_errors unit/test_errors.c)
 
 # --wrap is a GNU ld / lld feature; Apple's linker doesn't support it.
