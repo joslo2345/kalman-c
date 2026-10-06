@@ -185,20 +185,20 @@ int kf_fx_init(kf_fx_state *kf, int n, int m) {
     return KF_OK;
 }
 
-/* x = F x, P = F P F^T + Q (upper triangle mirrored). */
-int kf_fx_predict(kf_fx_state *kf, const kf_fx *F) {
+/* Given the predicted state and transition matrix (or Jacobian) F, set
+ * P = F P F^T + Q (upper triangle mirrored). Commits only on success. */
+static int fx_core_predict(kf_fx_state *kf, const kf_fx *x, const kf_fx *F) {
     kf_fx FP[KF_MAX_STATE * KF_MAX_STATE];
     kf_fx P[KF_MAX_STATE * KF_MAX_STATE];
-    kf_fx x[KF_MAX_STATE];
     int ovf = 0;
 
-    if ((kf == NULL) || (F == NULL) || !fx_dims_ok(kf)) {
+    /* Re-checked here: an EKF model callback receives ctx, which may alias *kf. */
+    if (!fx_dims_ok(kf)) {
         return KF_ERR_INVALID_INPUT;
     }
     const int n = kf->n;
 
     for (int i = 0; i < n; ++i) {
-        x[i] = from_wide(wide_dot(&F[i * n], 1, kf->x, 1, n, &ovf), &ovf);
         for (int k = 0; k < n; ++k) {
             FP[i * n + k] = from_wide(wide_dot(&F[i * n], 1, &kf->P[k], n, n, &ovf), &ovf);
         }
@@ -222,13 +222,31 @@ int kf_fx_predict(kf_fx_state *kf, const kf_fx *F) {
     return KF_OK;
 }
 
+/* x = F x, P = F P F^T + Q. */
+int kf_fx_predict(kf_fx_state *kf, const kf_fx *F) {
+    kf_fx x[KF_MAX_STATE];
+    int ovf = 0;
+
+    if ((kf == NULL) || (F == NULL) || !fx_dims_ok(kf)) {
+        return KF_ERR_INVALID_INPUT;
+    }
+    const int n = kf->n;
+    for (int i = 0; i < n; ++i) {
+        x[i] = from_wide(wide_dot(&F[i * n], 1, kf->x, 1, n, &ovf), &ovf);
+    }
+    if (ovf != 0) {
+        return KF_ERR_OVERFLOW;
+    }
+    return fx_core_predict(kf, x, F);
+}
+
 /*
  * Joseph-form update in the same O(n^2 m) arrangement as kf_linear.c:
  *   S = H P H^T + R, S K^T = H P, B = P - K (H P),
  *   P = (B - (B H^T) K^T) + K R K^T (upper triangle, symmetrized).
+ * Given the innovation y and the measurement matrix (or Jacobian) H.
  */
-int kf_fx_update(kf_fx_state *kf, const kf_fx *z, const kf_fx *H) {
-    kf_fx y[KF_MAX_MEAS];
+static int fx_core_update(kf_fx_state *kf, const kf_fx *y, const kf_fx *H) {
     kf_fx w[KF_MAX_MEAS];
     kf_fx HP[KF_MAX_MEAS * KF_MAX_STATE];
     kf_fx S[KF_MAX_MEAS * KF_MAX_MEAS];
@@ -242,15 +260,14 @@ int kf_fx_update(kf_fx_state *kf, const kf_fx *z, const kf_fx *H) {
     int ovf = 0;
     int status;
 
-    if ((kf == NULL) || (z == NULL) || (H == NULL) || !fx_dims_ok(kf)) {
+    /* Re-checked here: an EKF model callback receives ctx, which may alias *kf. */
+    if (!fx_dims_ok(kf)) {
         return KF_ERR_INVALID_INPUT;
     }
     const int n = kf->n;
     const int m = kf->m;
 
-    for (int a = 0; a < m; ++a) { /* y = z - H x, H P */
-        y[a] = from_wide(wide_sub(to_wide(z[a]), wide_dot(&H[a * n], 1, kf->x, 1, n, &ovf), &ovf),
-                         &ovf);
+    for (int a = 0; a < m; ++a) { /* H P */
         for (int c = 0; c < n; ++c) {
             HP[a * n + c] = from_wide(wide_dot(&H[a * n], 1, &kf->P[c], n, n, &ovf), &ovf);
         }
@@ -325,6 +342,65 @@ int kf_fx_update(kf_fx_state *kf, const kf_fx *z, const kf_fx *H) {
     (void)memcpy(kf->P, P, (size_t)n * (size_t)n * sizeof *P);
     kf->nis = nis;
     return KF_OK;
+}
+
+/* y = z - H x, then the Joseph-form update. */
+int kf_fx_update(kf_fx_state *kf, const kf_fx *z, const kf_fx *H) {
+    kf_fx y[KF_MAX_MEAS];
+    int ovf = 0;
+
+    if ((kf == NULL) || (z == NULL) || (H == NULL) || !fx_dims_ok(kf)) {
+        return KF_ERR_INVALID_INPUT;
+    }
+    const int n = kf->n;
+    for (int a = 0; a < kf->m; ++a) {
+        y[a] = from_wide(wide_sub(to_wide(z[a]), wide_dot(&H[a * n], 1, kf->x, 1, n, &ovf), &ovf),
+                         &ovf);
+    }
+    if (ovf != 0) {
+        return KF_ERR_OVERFLOW;
+    }
+    return fx_core_update(kf, y, H);
+}
+
+/* ---- Extended filter: the same cores, with the model from callbacks ---- */
+
+int kf_fx_ekf_predict(kf_fx_state *kf, kf_fx_transition_fn f, void *ctx) {
+    kf_fx x[KF_MAX_STATE];
+    kf_fx F[KF_MAX_STATE * KF_MAX_STATE];
+
+    if ((kf == NULL) || (f == NULL) || !fx_dims_ok(kf)) {
+        return KF_ERR_INVALID_INPUT;
+    }
+    (void)memset(x, 0, sizeof x);
+    (void)memset(F, 0, sizeof F);
+    if (f(x, F, kf->x, kf->n, ctx) != 0) {
+        return KF_ERR_MODEL_FAILED;
+    }
+    return fx_core_predict(kf, x, F);
+}
+
+int kf_fx_ekf_update(kf_fx_state *kf, const kf_fx *z, kf_fx_measurement_fn h, void *ctx) {
+    kf_fx hx[KF_MAX_MEAS];
+    kf_fx H[KF_MAX_MEAS * KF_MAX_STATE];
+    kf_fx y[KF_MAX_MEAS];
+    int ovf = 0;
+
+    if ((kf == NULL) || (z == NULL) || (h == NULL) || !fx_dims_ok(kf)) {
+        return KF_ERR_INVALID_INPUT;
+    }
+    (void)memset(hx, 0, sizeof hx);
+    (void)memset(H, 0, sizeof H);
+    if (h(hx, H, kf->x, kf->n, kf->m, ctx) != 0) {
+        return KF_ERR_MODEL_FAILED;
+    }
+    for (int a = 0; (a < kf->m) && (a < KF_MAX_MEAS); ++a) { /* y = z - h(x), range-checked */
+        y[a] = narrow((int64_t)z[a] - (int64_t)hx[a], &ovf);
+    }
+    if (ovf != 0) {
+        return KF_ERR_OVERFLOW;
+    }
+    return fx_core_update(kf, y, H);
 }
 
 int kf_fx_from_double(double v, kf_fx *out) {
