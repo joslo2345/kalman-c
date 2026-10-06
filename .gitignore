@@ -1,0 +1,20 @@
+# Build output
+build/
+build-*/
+*.o
+*.a
+*.so
+*.dylib
+*.elf
+*.bin
+*.hex
+*.map
+
+# IDE and editor folders
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Python tooling
+__pycache__/

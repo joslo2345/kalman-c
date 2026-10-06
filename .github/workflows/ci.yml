@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        precision: [float, double]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: >
+          cmake -B build
+          -DCMAKE_C_COMPILER=${{ matrix.compiler }}
+          -DCMAKE_BUILD_TYPE=Debug
+          -DKF_USE_DOUBLE=${{ matrix.precision == 'double' && 'ON' || 'OFF' }}
+          -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  cross-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install arm-none-eabi-gcc
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
+      - name: Build library for Cortex-M4F
+        run: >
+          cmake -B build-arm
+          -DCMAKE_SYSTEM_NAME=Generic
+          -DCMAKE_C_COMPILER=arm-none-eabi-gcc
+          -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
+          -DCMAKE_C_FLAGS="-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard"
+          -DKF_BUILD_TESTS=OFF
+          && cmake --build build-arm
