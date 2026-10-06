@@ -8,7 +8,8 @@ typedef enum {
     KF_OK = 0,
     KF_ERR_INVALID_INPUT = -1,         /* NULL pointer, bad dimension, NaN/Inf input */
     KF_ERR_NOT_POSITIVE_DEFINITE = -2, /* e.g. a singular innovation covariance */
-    KF_ERR_NOT_IMPLEMENTED = -3
+    KF_ERR_NOT_IMPLEMENTED = -3,
+    KF_ERR_MODEL_FAILED = -4           /* a user-supplied model callback returned non-zero */
 } kf_status;
 
 /* Matrices are flat, row-major arrays sized for the maximum dimensions. */

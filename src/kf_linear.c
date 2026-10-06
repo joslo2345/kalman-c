@@ -1,5 +1,6 @@
 #include "kalman/kf_linear.h"
 #include "kalman/kf_linalg.h"
+#include "kf_internal.h"
 
 #include <string.h>
 
@@ -18,48 +19,52 @@ int kf_init(kf_state *kf, int n, int m) {
     return KF_OK;
 }
 
-/* x = F x,  P = F P F^T + Q */
-int kf_predict(kf_state *kf, const kf_real *F) {
-    kf_real x[KF_MAX_STATE];
+/* P = F P F^T + Q */
+int kf_core_predict(kf_state *kf, const kf_real *x_pred, const kf_real *F) {
     kf_real FP[KF_MAX_STATE * KF_MAX_STATE];
     kf_real Ft[KF_MAX_STATE * KF_MAX_STATE];
     kf_real P[KF_MAX_STATE * KF_MAX_STATE];
-
-    if (kf == NULL || F == NULL) {
-        return KF_ERR_INVALID_INPUT;
-    }
     const int n = kf->n;
-    if (!kf_all_finite(F, n * n)) {
+
+    if (!kf_all_finite(x_pred, n) || !kf_all_finite(F, n * n)) {
         return KF_ERR_INVALID_INPUT;
     }
 
-    kf_mat_mul(x, F, kf->x, n, n, 1);
     kf_mat_mul(FP, F, kf->P, n, n, n);
     kf_mat_transpose(Ft, F, n, n);
     kf_mat_mul(P, FP, Ft, n, n, n);
     kf_mat_add(P, P, kf->Q, n, n);
     kf_mat_symmetrize(P, n);
 
-    if (!kf_all_finite(x, n) || !kf_all_finite(P, n * n)) {
+    if (!kf_all_finite(P, n * n)) {
         return KF_ERR_INVALID_INPUT;
     }
-    memcpy(kf->x, x, (size_t)n * sizeof *x);
+    memcpy(kf->x, x_pred, (size_t)n * sizeof *x_pred);
     memcpy(kf->P, P, (size_t)(n * n) * sizeof *P);
     return KF_OK;
 }
 
+/* x = F x,  P = F P F^T + Q */
+int kf_predict(kf_state *kf, const kf_real *F) {
+    kf_real x[KF_MAX_STATE];
+
+    if (kf == NULL || F == NULL) {
+        return KF_ERR_INVALID_INPUT;
+    }
+    kf_mat_mul(x, F, kf->x, kf->n, kf->n, 1);
+    return kf_core_predict(kf, x, F);
+}
+
 /*
- * Joseph-form update:
- *   y = z - H x,  S = H P H^T + R,  K = P H^T S^-1
+ * Joseph-form update, given the innovation y:
+ *   S = H P H^T + R,  K = P H^T S^-1
  *   x = x + K y
  *   P = (I - K H) P (I - K H)^T + K R K^T
  * K is formed by solving S K^T = H P with the Cholesky factor of S,
  * so S is never inverted explicitly.
  */
-int kf_update(kf_state *kf, const kf_real *z, const kf_real *H) {
-    kf_real y[KF_MAX_MEAS];
+int kf_core_update(kf_state *kf, const kf_real *y, const kf_real *H) {
     kf_real w[KF_MAX_MEAS];
-    kf_real Hx[KF_MAX_MEAS];
     kf_real Ht[KF_MAX_STATE * KF_MAX_MEAS];
     kf_real PHt[KF_MAX_STATE * KF_MAX_MEAS];
     kf_real S[KF_MAX_MEAS * KF_MAX_MEAS];
@@ -74,18 +79,13 @@ int kf_update(kf_state *kf, const kf_real *z, const kf_real *H) {
     kf_real nis = 0;
     int status;
 
-    if (kf == NULL || z == NULL || H == NULL) {
-        return KF_ERR_INVALID_INPUT;
-    }
     const int n = kf->n;
     const int m = kf->m;
-    if (!kf_all_finite(z, m) || !kf_all_finite(H, m * n)) {
+    if (!kf_all_finite(y, m) || !kf_all_finite(H, m * n)) {
         return KF_ERR_INVALID_INPUT;
     }
 
-    /* Innovation y and its covariance S */
-    kf_mat_mul(Hx, H, kf->x, m, n, 1);
-    kf_mat_sub(y, z, Hx, m, 1);
+    /* Innovation covariance S */
     kf_mat_transpose(Ht, H, m, n);
     kf_mat_mul(PHt, kf->P, Ht, n, n, m);
     kf_mat_mul(S, H, PHt, m, n, m);
@@ -131,4 +131,20 @@ int kf_update(kf_state *kf, const kf_real *z, const kf_real *H) {
     memcpy(kf->P, P, (size_t)(n * n) * sizeof *P);
     kf->nis = nis;
     return KF_OK;
+}
+
+/* y = z - H x, then the Joseph-form update */
+int kf_update(kf_state *kf, const kf_real *z, const kf_real *H) {
+    kf_real Hx[KF_MAX_MEAS];
+    kf_real y[KF_MAX_MEAS];
+
+    if (kf == NULL || z == NULL || H == NULL) {
+        return KF_ERR_INVALID_INPUT;
+    }
+    if (!kf_all_finite(z, kf->m)) {
+        return KF_ERR_INVALID_INPUT;
+    }
+    kf_mat_mul(Hx, H, kf->x, kf->m, kf->n, 1);
+    kf_mat_sub(y, z, Hx, kf->m, 1);
+    return kf_core_update(kf, y, H);
 }
