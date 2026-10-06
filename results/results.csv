@@ -230,3 +230,19 @@ tinyekf,ba0d2a9,S3,EKF,float64,nees,3.95791,-,768be72,arm64,Darwin,clang-21.0.0,
 kalman-c-specialized,0.1.0,S4,KF,float64,steps_to_failure,1e+06,steps,768be72,arm64,Darwin,clang-21.0.0,2026-10-05
 naive,textbook,S4,KF,float64,steps_to_failure,1e+06,steps,768be72,arm64,Darwin,clang-21.0.0,2026-10-05
 tinyekf,ba0d2a9,S4,KF,float64,steps_to_failure,1e+06,steps,768be72,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,instructions_per_step,5527.1,instructions,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,flash_bytes,12308,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,ram_bytes,176,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,stack_bytes,512,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,instructions_per_step,3602.1,instructions,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,flash_bytes,14004,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,ram_bytes,176,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,stack_bytes,504,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,instructions_per_step,4763.8,instructions,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,flash_bytes,10720,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,ram_bytes,268,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,stack_bytes,688,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,instructions_per_step,6607.9,instructions,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,flash_bytes,13716,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,ram_bytes,164,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,stack_bytes,740,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05

@@ -44,7 +44,7 @@ How to read the table:
 - **Ours vs best other** compares the default build with the best baseline, and is above 1.00x when kalman-c is better.
 - **max_abs_diff** is each baseline's largest difference from kalman-c's estimates.
 - **steps_to_failure** is the scenario length if the covariance never lost positive-definiteness.
-- Embedded metrics (cycles, flash, RAM on a Cortex-M4) haven't been measured yet.
+- The S2 `instructions_per_step`, `flash_bytes`, `ram_bytes` and `stack_bytes` rows come from Cortex-M4F firmware. It's built for an STM32F405 and run under QEMU, not on a physical board. See "Embedded" below.
 
 What it shows so far:
 
@@ -55,6 +55,16 @@ What it shows so far:
   - On the smallest problem (S1), fixed per-step costs still leave it behind: 1.3× in float32 and 1.8× in float64.
   - The default build is 2–3× slower than TinyEKF, because its sizes are only known at run time.
 
+**Embedded** (STM32F405 / Cortex-M4F, emulated with QEMU 11.1.2 `netduinoplus2`, built with `arm-none-eabi-gcc` 14.2.1 using `-O2 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard`):
+
+- Each image runs the first 1,000 steps of S2, with the sizes set to the problem (`KF_MAX_STATE=4`, `KF_MAX_MEAS=2`).
+- `instructions_per_step` is an exact count of the instructions QEMU executes per predict+update. **It is not cycles**: QEMU doesn't model the pipeline, flash wait states or the DWT counter. The guide's `cycles_per_step` still needs a real board.
+- Flash includes the 9,068-byte harness and scenario data that every image shares. RAM is `data + bss`; `stack_bytes` is the measured peak stack use.
+- Results:
+  - The specialized build runs the fewest instructions: 3,602 per step, against 4,764 for the textbook filter and 6,608 for TinyEKF. It costs about 1.7 KB more flash than the default build.
+  - TinyEKF's count includes software double-precision math. It calls `sqrt()` on a double, and the M4F has only a single-precision FPU. kalman-c links no double-precision code.
+  - kalman-c also uses the least stack of the three filters: 512 bytes, against 688 for naive and 740 for TinyEKF.
+
 <!-- BENCH:START -->
 | Scenario | Filter | Precision | Metric | kalman-c | kalman-c-specialized | naive | tinyekf | Ours vs best other |
 |---|---|---|---|---|---|---|---|---|
@@ -64,8 +74,12 @@ What it shows so far:
 | S1 | KF | float64 | max_abs_diff (state) | n/a | n/a | 1.364e-12 | 9.095e-13 | n/a |
 | S1 | KF | float64 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 0.2635 | 1.00x |
 | S1 | KF | float64 | time_per_step (ns) | 104.1 | 49.7 | 65.7 | 27.8 | 0.27x |
+| S2 | KF | float32 | flash_bytes (bytes) | 1.231e+04 | 1.4e+04 | 1.072e+04 | 1.372e+04 | 0.87x |
+| S2 | KF | float32 | instructions_per_step (instructions) | 5527 | 3602 | 4764 | 6608 | 0.86x |
 | S2 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0005245 | 0.0006514 | n/a |
+| S2 | KF | float32 | ram_bytes (bytes) | 176 | 176 | 268 | 164 | 0.93x |
 | S2 | KF | float32 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
+| S2 | KF | float32 | stack_bytes (bytes) | 512 | 504 | 688 | 740 | 1.34x |
 | S2 | KF | float32 | time_per_step (ns) | 192.9 | 54.4 | 192.5 | 57.2 | 0.30x |
 | S2 | KF | float64 | max_abs_diff (state) | n/a | n/a | 3.258e-12 | 2.832e-12 | n/a |
 | S2 | KF | float64 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
