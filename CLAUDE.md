@@ -52,7 +52,15 @@ Implementation conventions:
   - `kfi_ud_factor`: with `psd == 0` it requires only d > 0. A relative tolerance there wrongly rejected S5's P0, where a 1e-6 bias variance sits next to variances of 1. With `psd != 0`, a near-zero pivot is accepted only if its column is negligible, and it keeps tiny positive values.
 - **Fixed-point filter (`src/kf_fixed.c`, `kf_fx_*`):**
   - It's integer-only, with no `kf_real` and no `kf_linalg_impl.h`.
-  - Products are exact `int64_t` values with 2F fractional bits, accumulated with checked `wide_add` and `wide_sub` and rounded once (`round_shift`).
+  - Products are `int64_t` values with 2F fractional bits. `wide_dot` divides each one by 2^`FX_GUARD` (2^g ≥ `KF_MAX_DIM`), so the sum cannot overflow, and checks once at the end; other sums use the checked `wide_add` and `wide_sub`. Results are rounded once (`round_shift`).
+  - **Fixed-point performance, measured on the M3** with `scripts/profile_firmware.py` (firmware is built with `-g`):
+    - Per-term overflow checks in `wide_dot` were 46% of the instructions. Guard bits brought the step from 14,064 to 12,576.
+    - Tried and rejected, so don't retry them without new evidence:
+      - Exact 96-bit carry accumulation: 14,518, because GCC doesn't emit add-with-carry for it.
+      - The unsigned offset-and-shift floor: 13,885.
+      - Replacing `memcpy` with loops: GCC turns them back into `memcpy` calls. newlib-nano's byte-wise `memcpy` is the real cost.
+    - What's left: 64-bit division (`div_wide` → `__udivmoddi4`, about 11%) and `isqrt64` (about 6%).
+  - The fixed-point KF and EKF share `fx_core_predict` and `fx_core_update`, which re-check `n` and `m`. The test helper `fx_dot` in `test_fixed.c` mirrors `wide_dot`'s rounding, so the EKF stays bit-identical to the KF. Keep the two in sync.
   - It never right-shifts a negative number (implementation-defined in C99) and never negates a sum (`INT64_MIN`); use `wide_sub`.
   - Every narrowing goes through `narrow()`, which sets `ovf`. Any `ovf` makes the call return `KF_ERR_OVERFLOW` before it commits.
   - Use the `KF_FX_FRAC` CMake option (applied PUBLIC), never a per-target define: headers and library must agree. The bench build defaults to 18.

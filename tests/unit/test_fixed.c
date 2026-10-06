@@ -129,11 +129,15 @@ void test_fixed_point_filter_tracks_the_float_filter(void) {
 
 /* ---- Extended filter ---- */
 
-/* round(sum a_k b_k / 2^F), ties away from zero, as the library rounds. */
+/* F x exactly as the library computes it (wide_dot in kf_fixed.c): each product
+ * divided by the guard scale (2^g >= KF_MAX_DIM, truncating), summed, scaled
+ * back, then rounded to the Q format with ties away from zero. */
 static kf_fx fx_dot(const kf_fx *a, const kf_fx *b, int len) {
+    const int64_t guard = KF_MAX_DIM <= 4 ? 4 : KF_MAX_DIM <= 16 ? 16 : KF_MAX_DIM <= 64 ? 64 : 256;
     int64_t acc = 0;
     for (int k = 0; k < len; ++k)
-        acc += (int64_t)a[k] * (int64_t)b[k];
+        acc += ((int64_t)a[k] * (int64_t)b[k]) / guard;
+    acc *= guard;
     const int64_t half = (int64_t)1 << (KF_FX_FRAC - 1);
     const int64_t r = acc >= 0 ? (acc + half) >> KF_FX_FRAC : -((-acc + half) >> KF_FX_FRAC);
     return (kf_fx)r;

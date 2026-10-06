@@ -9,8 +9,9 @@
  * bits: the real value v is stored as round(v * 2^KF_FX_FRAC). The filter
  * mirrors kf_linear.h and kf_ekf.h (Joseph-form update, Cholesky solves) using
  * only integer arithmetic; the KF and EKF share one predict and update core. Each dot product
- * accumulates exact 64-bit products and rounds once, and rounding is symmetric (half away from
- * zero).
+ * accumulates 64-bit products (each with 2 KF_FX_FRAC fractional bits, the
+ * lowest few dropped as guard bits so the sum cannot overflow) and rounds once.
+ * Rounding is symmetric (half away from zero).
  *
  * Choose KF_FX_FRAC for the problem, because one format serves every state,
  * covariance and noise value:

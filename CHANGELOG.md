@@ -7,6 +7,22 @@ change the API.
 
 ## [Unreleased]
 
+### Added
+
+- A fixed-point EKF (`kf_fx_ekf_predict`, `kf_fx_ekf_update`) with Q-format model callbacks.
+  - It shares the fixed-point KF's predict and update core, so with linear callbacks it is bit-identical to the KF.
+  - On 300 range-bearing steps it tracks the float EKF to 4.9e-4 m.
+- `scripts/profile_firmware.py` and the `embedded/qemu/tbprof.c` QEMU plugin: an instruction profile of a firmware image by function and source line.
+
+### Changed
+
+- The fixed-point filter needs about 10% fewer instructions per step: 12,576 instead of 13,996 on the Cortex-M3, and 12,503 instead of 14,328 on the M4F, with about 400 bytes less flash.
+  - Profiling showed that checking every 64-bit multiply-add for overflow cost almost half the instructions.
+  - Dot products now drop a few guard bits per product, so their sums cannot overflow, and check once at the end.
+  - The precision cost is at most 2^-32 in real terms, far below the 2^-20 rounding step.
+- Stack use of the fixed-point filter rose by 48 bytes (544 to 592 on the M4F), because the KF entry points and the shared core are separate frames.
+- Firmware images are built with `-g`. This adds debug sections only; code, flash and RAM sizes are unchanged.
+
 ## [0.2.0] - 2026-10-06
 
 Every step of the design plan is now implemented: a square-root (UD) filter for badly conditioned problems, and a fixed-point filter for microcontrollers without an FPU.

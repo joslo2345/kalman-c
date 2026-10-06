@@ -3,12 +3,13 @@
 #include <string.h>
 
 /*
- * Fixed-point linear Kalman filter. Values are int32 with F = KF_FX_FRAC
- * fractional bits. Products of two values are exact int64 numbers with 2F
- * fractional bits ("wide" values below); sums of them are accumulated in
- * int64 with overflow checks and rounded to F bits once. Every narrowing to
- * int32 is range-checked. Any overflow sets *ovf, and the public functions
- * then return KF_ERR_OVERFLOW without touching the filter state.
+ * Fixed-point Kalman filter. Values are int32 with F = KF_FX_FRAC fractional
+ * bits. Products of two values are int64 numbers with 2F fractional bits
+ * ("wide" values below). Dot products drop FX_GUARD low bits from each
+ * product so their sums cannot overflow (see wide_dot), and are rounded to F
+ * bits once. Every narrowing to int32 is range-checked. Any overflow sets
+ * *ovf, and the public functions then return KF_ERR_OVERFLOW without touching
+ * the filter state.
  *
  * Rounding never right-shifts a negative number (implementation-defined in
  * C99): magnitudes are rounded and the sign reapplied.
@@ -19,6 +20,19 @@
 /* 2^F, the scale between the Q format and real values (shifts stay unsigned). */
 static const uint64_t fx_one_u = (uint64_t)1U << (unsigned)FX_F;
 #define FX_ONE_WIDE ((int64_t)fx_one_u)
+
+/* Guard bits for wide_dot: 2^FX_GUARD >= KF_MAX_DIM, the longest dot product. */
+#if KF_MAX_DIM <= 4
+#define FX_GUARD 2
+#elif KF_MAX_DIM <= 16
+#define FX_GUARD 4
+#elif KF_MAX_DIM <= 64
+#define FX_GUARD 6
+#elif KF_MAX_DIM <= 256
+#define FX_GUARD 8
+#else
+#error "KF_MAX_DIM above 256 is not supported by the fixed-point filter"
+#endif
 
 static int fx_dims_ok(const kf_fx_state *kf) {
     return (kf->n >= 1) && (kf->n <= KF_MAX_STATE) && (kf->m >= 1) && (kf->m <= KF_MAX_MEAS);
@@ -90,14 +104,30 @@ static kf_fx from_wide(int64_t w, int *ovf) {
     return narrow(round_shift(w, FX_F), ovf);
 }
 
-/* sum_k a[k * sa] * b[k * sb], exact, as a wide value. |a|, |b| < 2^31, so each
- * product is below 2^62 and only the running sum can overflow. */
+/*
+ * sum_k a[k * sa] * b[k * sb], as a wide value.
+ *
+ * Each product is below 2^62 in magnitude. Dividing it by 2^FX_GUARD (which is
+ * at least len) first makes the running sum provably below 2^62, so the loop
+ * needs no overflow checks; one check remains when scaling back up. The
+ * dropped bits are at most len * 2^(FX_GUARD - 2F) in real terms, far below
+ * the 2^-F rounding step. (Division, not a shift: right-shifting a negative
+ * value is implementation-defined in C99.) On a Cortex-M3, a per-term check
+ * cost almost half of the filter's instructions.
+ */
 static int64_t wide_dot(const kf_fx *a, int sa, const kf_fx *b, int sb, int len, int *ovf) {
+    const uint64_t guard_u = (uint64_t)1U << (unsigned)FX_GUARD;
+    const int64_t fx_guard_scale = (int64_t)guard_u;
     int64_t s = 0;
     for (int k = 0; k < len; ++k) {
-        s = wide_add(s, (int64_t)a[k * sa] * (int64_t)b[k * sb], ovf);
+        s += ((int64_t)a[k * sa] * (int64_t)b[k * sb]) / fx_guard_scale;
     }
-    return s;
+    const int64_t limit = wide_max() / fx_guard_scale;
+    if ((s > limit) || (s < -limit)) {
+        *ovf = 1;
+        return 0;
+    }
+    return s * fx_guard_scale;
 }
 
 /* A wide numerator divided by a Q-format denominator, rounded, as a Q-format value. */

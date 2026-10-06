@@ -14,7 +14,7 @@ set(TINYEKF_DIR ${ROOT}/tests/baselines/tinyekf)
 # m3: STM32F205 (Cortex-M3, no FPU: floats are emulated in software), QEMU netduino2.
 set(FW_CPU_m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard)
 set(FW_CPU_m3 -mcpu=cortex-m3 -mfloat-abi=soft)
-set(FW_COMMON_CFLAGS -O2 -std=c99 -ffunction-sections -fdata-sections -Wall -Wextra)
+set(FW_COMMON_CFLAGS -O2 -g -std=c99 -ffunction-sections -fdata-sections -Wall -Wextra)
 set(FW_COMMON_LDFLAGS -nostartfiles -T${CMAKE_CURRENT_SOURCE_DIR}/stm32f405.ld
     -Wl,--gc-sections --specs=nano.specs --specs=nosys.specs)
 

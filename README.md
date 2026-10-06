@@ -122,7 +122,7 @@ kalman-c is a Kalman filter library for microcontrollers and anything else that 
     </td>
     <td width="33%">
       <strong>🔩 Fixed Point</strong><br/><br/>
-      Integer-only Q-format with exact 64-bit accumulation. Overflow returns <code>KF_ERR_OVERFLOW</code>, never a wrap. Built for parts without an FPU.<br/><br/>
+      Integer-only KF and EKF in Q-format with 64-bit accumulation. Overflow returns <code>KF_ERR_OVERFLOW</code>, never a wrap. Built for parts without an FPU.<br/><br/>
       <a href="./include/kalman/kf_fixed.h">kf_fixed.h →</a>
     </td>
   </tr>
@@ -343,7 +343,7 @@ flowchart LR
 | **`kf_ekf.h`** | EKF on the same core. Callbacks return the model and its Jacobian, plus a `ctx` pointer. |
 | **`kf_ukf.h`** | UKF with additive noise and Cholesky sigma points. `NULL` parameters select α = 1, β = 2, κ = 0, which is safe in float. |
 | **`kf_sqrt.h`** | UD square-root KF/EKF. Bierman update, Thornton predict, and R whitened into scalar updates. |
-| **`kf_fixed.h`** | Integer-only KF. Q-format `int32_t`, exact `int64_t` dot products, an integer square root, and overflow reported as an error. |
+| **`kf_fixed.h`** | Integer-only KF and EKF on one shared core. Q-format `int32_t`, `int64_t` dot products with guard bits, an integer square root, and overflow reported as an error. |
 | **`kf_linalg.h`** | Public matrix routines. The filters use always-inline copies, so `KF_SPECIALIZE` can make sizes constant. |
 | **`kf_config.h`** | Compile-time configuration: precision, maximum sizes, specializations. |
 
