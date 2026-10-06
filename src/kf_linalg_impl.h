@@ -10,6 +10,8 @@
 #include "kalman/kf_linalg.h"
 
 #include <math.h>
+#include <stdint.h>
+#include <string.h>
 
 #if defined(__GNUC__) || defined(__clang__)
 #define KFI_INLINE static inline __attribute__((always_inline))
@@ -140,6 +142,34 @@ KFI_INLINE int kfi_cholesky(kf_real *L, const kf_real *A, int n) {
     return KF_OK;
 }
 
+/* Triangular solves given the reciprocals rd[i] = 1 / L[i][i], so the filter
+ * divides once per diagonal entry instead of once per solved element. */
+KFI_INLINE void kfi_solve_lower_rd(kf_real *X, const kf_real *L, const kf_real *rd,
+                                   const kf_real *B, int n, int c) {
+    for (int col = 0; col < c; ++col) {
+        for (int i = 0; i < n; ++i) {
+            kf_real s = B[i * c + col];
+            for (int p = 0; p < i; ++p) {
+                s -= L[i * n + p] * X[p * c + col];
+            }
+            X[i * c + col] = s * rd[i];
+        }
+    }
+}
+
+KFI_INLINE void kfi_solve_lower_t_rd(kf_real *X, const kf_real *L, const kf_real *rd,
+                                     const kf_real *B, int n, int c) {
+    for (int col = 0; col < c; ++col) {
+        for (int i = n - 1; i >= 0; --i) {
+            kf_real s = B[i * c + col];
+            for (int p = i + 1; p < n; ++p) {
+                s -= L[p * n + i] * X[p * c + col];
+            }
+            X[i * c + col] = s * rd[i];
+        }
+    }
+}
+
 KFI_INLINE void kfi_solve_lower(kf_real *X, const kf_real *L, const kf_real *B, int n, int c) {
     for (int col = 0; col < c; ++col) {
         for (int i = 0; i < n; ++i) {
@@ -189,15 +219,23 @@ KFI_INLINE int kfi_cholesky_ok(const kf_real *A, int n) {
     return kfi_cholesky(L, A, n) == KF_OK;
 }
 
-/* v * 0 is 0 for finite v and NaN for Inf or NaN, so the sum is NaN exactly when
- * some element is not finite. Branchless, so it vectorizes. Not valid under
- * -ffast-math, which assumes NaN and Inf never occur. */
+/* A value is NaN or Inf exactly when its exponent bits are all ones. Testing
+ * the bits uses independent integer operations, so there is no floating-point
+ * dependency chain, and it stays correct under -ffast-math. */
 KFI_INLINE int kfi_all_finite(const kf_real *v, int len) {
-    kf_real acc = 0;
+#ifdef KF_USE_DOUBLE
+    const uint64_t exp_mask = 0x7FF0000000000000ull;
+    uint64_t bits;
+#else
+    const uint32_t exp_mask = 0x7F800000u;
+    uint32_t bits;
+#endif
+    int bad = 0;
     for (int i = 0; i < len; ++i) {
-        acc += v[i] * 0;
+        memcpy(&bits, &v[i], sizeof bits);
+        bad |= (bits & exp_mask) == exp_mask;
     }
-    return acc == acc;
+    return !bad;
 }
 
 #endif

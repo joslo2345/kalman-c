@@ -42,7 +42,8 @@ Implementation conventions:
 - Performance experiments that failed, measured on M3 Pro (don't retry them without new evidence):
   - Row-axpy matmul: slower for n ≤ 4, only about 8% faster at n = 15.
   - Full-matrix axpy update: slower everywhere.
-- `kfi_all_finite` is branchless (`acc += v * 0`, then `acc == acc`). It breaks under `-ffast-math`, so never build the library with fast-math.
+- `kfi_all_finite` tests the exponent bits (all ones means NaN or Inf), reading each value through `memcpy` into an integer. An earlier version summed `v * 0`, but that built a floating-point dependency chain; replacing it made S5 about 22% faster. The bit test also stays correct under `-ffast-math`.
+- `core_update` computes `1 / diag(L)` once and multiplies by it in the triangular solves (`kfi_solve_lower_rd` and `kfi_solve_lower_t_rd`), instead of dividing for every element.
 - Specialized and generic builds agree to rounding, not bit-for-bit, because constant sizes change vectorization and FMA contraction. Tests use tolerances, so both pass. The EKF-vs-KF bit-identity test still holds, since both share one core.
 - `kf_linalg` outputs must not alias their inputs, except where the header says they may.
 - Unity's double assertions are enabled (`UNITY_INCLUDE_DOUBLE`). Tests compare through `(double)` with tolerances that depend on precision.

@@ -1,7 +1,12 @@
 #include "unity.h"
 #include "kalman/kalman.h"
 
+#include <float.h>
 #include <math.h>
+
+/* Smallest positive subnormal; *_TRUE_MIN is C11, so derive it for C99. */
+#define FLT_TRUE_MIN_OR_DENORM (FLT_MIN / 4)
+#define DBL_TRUE_MIN_OR_DENORM (DBL_MIN / 4)
 
 #ifdef KF_USE_DOUBLE
 #define TOL 1e-9
@@ -115,6 +120,21 @@ void test_all_finite(void) {
     TEST_ASSERT_FALSE(kf_all_finite(bad_inf, 3));
 }
 
+void test_all_finite_boundaries(void) {
+#ifdef KF_USE_DOUBLE
+    const kf_real largest = DBL_MAX, tiny = DBL_TRUE_MIN_OR_DENORM;
+#else
+    const kf_real largest = FLT_MAX, tiny = FLT_TRUE_MIN_OR_DENORM;
+#endif
+    const kf_real edge[5] = {largest, -largest, tiny, -tiny, (kf_real)-0.0};
+    const kf_real neg_inf[2] = {1, -INFINITY};
+    const kf_real neg_nan[2] = {-NAN, 1};
+    TEST_ASSERT_TRUE(kf_all_finite(edge, 5));
+    TEST_ASSERT_FALSE(kf_all_finite(neg_inf, 2));
+    TEST_ASSERT_FALSE(kf_all_finite(neg_nan, 2));
+    TEST_ASSERT_TRUE(kf_all_finite(edge, 0)); /* empty input is trivially finite */
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_mul_rectangular);
@@ -128,5 +148,6 @@ int main(void) {
     RUN_TEST(test_cholesky_solve_recovers_x);
     RUN_TEST(test_is_symmetric_tolerance);
     RUN_TEST(test_all_finite);
+    RUN_TEST(test_all_finite_boundaries);
     return UNITY_END();
 }

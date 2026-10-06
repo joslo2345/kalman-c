@@ -99,6 +99,7 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
     kf_real HP[KF_MAX_MEAS * KF_MAX_STATE]; /* H P = (P H^T)^T, as P is symmetric */
     kf_real S[KF_MAX_MEAS * KF_MAX_MEAS];
     kf_real L[KF_MAX_MEAS * KF_MAX_MEAS];
+    kf_real rd[KF_MAX_MEAS]; /* 1 / diag(L) */
     kf_real Kt[KF_MAX_MEAS * KF_MAX_STATE];  /* K^T, m x n */
     kf_real RKt[KF_MAX_MEAS * KF_MAX_STATE]; /* R K^T, m x n */
     kf_real B[KF_MAX_STATE * KF_MAX_STATE];
@@ -124,10 +125,14 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
     }
 
     /* Gain: S K^T = H P */
-    kfi_cholesky_solve(Kt, L, HP, m, n);
+    for (int i = 0; i < m; ++i) {
+        rd[i] = (kf_real)1 / L[i * m + i];
+    }
+    kfi_solve_lower_rd(Kt, L, rd, HP, m, n);
+    kfi_solve_lower_t_rd(Kt, L, rd, Kt, m, n);
 
     /* NIS = y^T S^-1 y = |L^-1 y|^2 */
-    kfi_solve_lower(w, L, y, m, 1);
+    kfi_solve_lower_rd(w, L, rd, y, m, 1);
     for (int i = 0; i < m; ++i) {
         nis += w[i] * w[i];
     }
