@@ -1,0 +1,10 @@
+# Keeps the SHA-pinned GitHub Actions current: Dependabot opens a pull request
+# that updates the pin (and its version comment) when an action is released.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
