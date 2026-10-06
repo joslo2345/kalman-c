@@ -40,7 +40,8 @@ static void at_exit(void *userdata) {
     char line[96];
     (void)userdata;
     for (block *b = blocks; b != NULL; b = b->next) {
-        if (b->count == 0) continue;
+        if (b->count == 0)
+            continue;
         snprintf(line, sizeof line, "tbprof %" PRIx64 " %" PRIu64 " %" PRIu64 "\n", b->vaddr,
                  b->insns, b->count);
         qemu_plugin_outs(line);
