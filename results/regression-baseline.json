@@ -1,0 +1,20 @@
+{
+  "toolchain": {
+    "compiler": "gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "valgrind": "valgrind-3.22.0",
+    "machine": "x86_64"
+  },
+  "steps": 500,
+  "instructions_per_step": {
+    "S1 KF": 1947.9,
+    "S2 KF": 4969.9,
+    "S5 KF": 92585.3,
+    "S2 KF specialized": 1776.9,
+    "S5 KF specialized": 42995.3,
+    "S3 EKF": 5531.7,
+    "S3 UKF": 16345.4,
+    "S2 square-root (UD)": 3788.7,
+    "S5 square-root (UD)": 61797.1,
+    "S2 fixed point (q18)": 8108.7
+  }
+}
