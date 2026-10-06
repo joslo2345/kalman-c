@@ -49,6 +49,22 @@ Implementation conventions:
 - `kf_linalg` outputs must not alias their inputs, except where the header says they may.
 - Unity's double assertions are enabled (`UNITY_INCLUDE_DOUBLE`). Tests compare through `(double)` with tolerances that depend on precision.
 
+## Versioning and releases
+
+- **The version has one source:** `#define KALMAN_C_VERSION` in `include/kalman/kf_config.h`. The top-level CMake reads `project(VERSION)` from it, and so do the bench and `run_embedded.py`. `library.json` and `CHANGELOG.md` must be updated by hand to match.
+- **To release:**
+  1. Bump `KALMAN_C_VERSION` and `library.json`.
+  2. Add a `## [X.Y.Z]` section to `CHANGELOG.md`.
+  3. Re-run the benchmarks (desktop and embedded) so the README table matches the released code.
+  4. Commit, wait for CI to pass, then push the tag `vX.Y.Z`.
+
+  `.github/workflows/release.yml` then checks that the tag matches the version, builds and tests the single header, and publishes a GitHub Release. The release body is that version's changelog section, and the assets are `kalman_c.h` and the Arduino zip.
+- **Packaging:**
+  - `scripts/amalgamate.py` builds `kalman_c.h` from `include/` and `src/` in a fixed file order. Implementation sources go behind `KALMAN_C_IMPLEMENTATION`.
+  - Static names must stay unique across the `src/*.c` files, because they all end up in one translation unit.
+  - `--arduino` also writes the Arduino library zip. The Arduino Library Manager isn't used, because the repository's `include/` layout doesn't match Arduino's `src/` convention.
+- **Every function-declaring public header has `extern "C"` guards.** The `test_cpp_caller` and `test_cpp_single_header` tests fail to link without them.
+
 ## Non-negotiable design constraints
 
 These apply to every change to library code (`src/`, `include/kalman/`):

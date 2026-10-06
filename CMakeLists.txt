@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-project(kalman_c VERSION 0.1.0 LANGUAGES C)
+
+# The version's single source is KALMAN_C_VERSION in kf_config.h.
+file(STRINGS include/kalman/kf_config.h _kf_version_line REGEX "^#define KALMAN_C_VERSION ")
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" KF_VERSION "${_kf_version_line}")
+project(kalman_c VERSION ${KF_VERSION} LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -24,7 +28,6 @@ add_library(kalman STATIC
     src/kf_linalg.c src/kf_linear.c src/kf_ekf.c src/kf_ukf.c)
 target_include_directories(kalman PUBLIC include)
 target_compile_options(kalman PRIVATE -Wall -Wextra -Wpedantic)
-target_compile_definitions(kalman PUBLIC KALMAN_C_VERSION="${PROJECT_VERSION}")
 
 # sqrt/isfinite live in a separate libm on most non-Apple toolchains.
 find_library(KF_LIBM m)

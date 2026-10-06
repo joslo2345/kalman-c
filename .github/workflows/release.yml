@@ -1,0 +1,36 @@
+name: Release
+
+# Pushing a tag vX.Y.Z builds the single-header and Arduino packages from that
+# commit and publishes them as a GitHub Release.
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the tag matches KALMAN_C_VERSION
+        run: |
+          version=$(sed -n 's/^#define KALMAN_C_VERSION "\(.*\)"/\1/p' include/kalman/kf_config.h)
+          test "v$version" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != v$version"; exit 1; }
+      - name: Build and test the single header
+        run: |
+          python3 scripts/amalgamate.py dist --arduino
+          cc -std=c99 -Wall -Wextra -Wpedantic -Werror -Idist \
+            tests/dist/impl_main.c tests/dist/use_api.c -lm -o dist-test && ./dist-test
+      - name: Release notes from CHANGELOG.md
+        run: |
+          version=${GITHUB_REF_NAME#v}
+          awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md \
+            | sed '/^\[.*\]: /d' > notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" --title "kalman-c $GITHUB_REF_NAME"
+          --notes-file notes.md dist/kalman_c.h dist/kalman-c-arduino-*.zip

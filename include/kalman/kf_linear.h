@@ -12,6 +12,10 @@
 
 #include "kalman/kf_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Initialize a filter: set the sizes and zero x, P, Q, R and nis.
  *
@@ -48,5 +52,9 @@ int kf_predict(kf_state *kf, const kf_real *F);
  *         H P H^T + R is not positive-definite. On error the state is unchanged.
  */
 int kf_update(kf_state *kf, const kf_real *z, const kf_real *H);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

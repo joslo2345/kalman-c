@@ -16,6 +16,10 @@
 
 #include "kalman/kf_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Transition model: x_out (n) = f(x), F_out (n x n) = df/dx at x.
  * @return 0 on success, non-zero to abort the step.
@@ -56,5 +60,9 @@ int kf_ekf_predict(kf_state *kf, kf_ekf_transition_fn f, void *ctx);
  *         KF_ERR_MODEL_FAILED. On error the state is unchanged.
  */
 int kf_ekf_update(kf_state *kf, const kf_real *z, kf_ekf_measurement_fn h, void *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

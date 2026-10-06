@@ -11,6 +11,10 @@
 
 #include "kalman/kf_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** C (r x c) = A (r x k) * B (k x c). */
 void kf_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A, const kf_real *KF_RESTRICT B,
                 int r, int k, int c);
@@ -57,5 +61,9 @@ int kf_is_symmetric(const kf_real *A, int n, kf_real tol);
 int kf_cholesky_ok(const kf_real *A, int n);
 /** @return 1 if all len values are finite (no NaN or Inf); otherwise 0. */
 int kf_all_finite(const kf_real *v, int len);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

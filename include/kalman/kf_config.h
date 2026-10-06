@@ -22,6 +22,9 @@
  *   cache variable rather than `CMAKE_C_FLAGS`, whose parentheses the shell mangles.
  */
 
+/** Library version as "major.minor.patch". CMake reads its project version from here. */
+#define KALMAN_C_VERSION "0.1.0"
+
 #ifndef KF_USE_DOUBLE
 /** Scalar type for every filter quantity: `float`, or `double` with KF_USE_DOUBLE. */
 typedef float kf_real;

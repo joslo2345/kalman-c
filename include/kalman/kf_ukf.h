@@ -16,6 +16,10 @@
 
 #include "kalman/kf_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Scaled unscented transform parameters.
  *
@@ -72,5 +76,9 @@ int kf_ukf_predict(kf_state *kf, const kf_ukf_params *params, kf_ukf_transition_
  */
 int kf_ukf_update(kf_state *kf, const kf_real *z, const kf_ukf_params *params,
                   kf_ukf_measurement_fn h, void *ctx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

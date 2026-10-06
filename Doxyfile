@@ -1,7 +1,6 @@
 # API reference for the public headers. Build with: doxygen
 # Output: build-docs/html/index.html. Undocumented public symbols fail the build.
 PROJECT_NAME           = kalman-c
-PROJECT_NUMBER         = 0.1.0
 PROJECT_BRIEF          = "Embedded-friendly Kalman filters in C99"
 OUTPUT_DIRECTORY       = build-docs
 INPUT                  = include/kalman

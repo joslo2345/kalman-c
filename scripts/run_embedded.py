@@ -88,9 +88,9 @@ def main():
     plugin = args.plugin or build_plugin(bdir)
 
     commit = args.commit or run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"]).stdout.strip()
-    project = open(os.path.join(ROOT, "CMakeLists.txt")).read()
+    config = open(os.path.join(ROOT, "include", "kalman", "kf_config.h")).read()
     versions = {
-        "kalman": re.search(r"project\(kalman_c VERSION ([\d.]+)", project).group(1),
+        "kalman": re.search(r'#define KALMAN_C_VERSION "([\d.]+)"', config).group(1),
         "naive": "textbook",
         "tinyekf": run(["git", "-C", os.path.join(ROOT, "tests", "baselines", "tinyekf"),
                         "rev-parse", "--short", "HEAD"]).stdout.strip(),

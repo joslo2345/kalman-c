@@ -1,0 +1,22 @@
+{
+  "name": "kalman-c",
+  "version": "0.1.0",
+  "description": "Embedded-friendly Kalman filters (KF, EKF, UKF) in C99 with no dynamic allocation, Joseph-form updates, and errors that leave the filter state unchanged.",
+  "keywords": ["kalman", "filter", "ekf", "ukf", "estimation", "sensor-fusion", "embedded"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joslo2345/kalman-c.git"
+  },
+  "license": "MIT",
+  "frameworks": "*",
+  "platforms": "*",
+  "headers": ["kalman/kalman.h"],
+  "build": {
+    "srcDir": "src",
+    "includeDir": "include"
+  },
+  "export": {
+    "include": ["include", "src", "examples", "LICENSE", "README.md", "CHANGELOG.md", "library.json"]
+  },
+  "examples": ["examples/*.c"]
+}
