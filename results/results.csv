@@ -246,3 +246,151 @@ tinyekf,ba0d2a9,S2,KF,float32,instructions_per_step,6607.9,instructions,ed606a1,
 tinyekf,ba0d2a9,S2,KF,float32,flash_bytes,13716,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
 tinyekf,ba0d2a9,S2,KF,float32,ram_bytes,164,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
 tinyekf,ba0d2a9,S2,KF,float32,stack_bytes,740,bytes,ed606a1,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c,0.1.0,S1,KF,float32,rmse,0.263504,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S1,KF,float32,time_per_step,69.4,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float32,rmse,0.2635,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float32,max_abs_diff,0.000646114,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float32,time_per_step,58.2,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float32,rmse,0.263502,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float32,max_abs_diff,0.000649929,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float32,time_per_step,29.9,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,rmse,0.26597,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,time_per_step,201.4,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float32,rmse,0.265971,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float32,max_abs_diff,0.000653267,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float32,time_per_step,197.5,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,rmse,0.265971,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,max_abs_diff,0.000605583,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,time_per_step,63.1,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S5,KF,float32,rmse,0.0612313,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S5,KF,float32,time_per_step,4405.6,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float32,rmse,0.0612317,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float32,max_abs_diff,0.000976562,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float32,time_per_step,5548.2,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float32,rmse,0.0612317,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float32,max_abs_diff,0.000976562,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float32,time_per_step,2048.3,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,EKF,float32,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,EKF,float32,nees,3.95792,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,UKF,float32,rmse,0.21443,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,UKF,float32,nees,3.95789,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float32,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float32,nees,3.95792,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S4,KF,float32,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S4,KF,float32,steps_to_failure,0,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S4,KF,float32,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S1,KF,float64,rmse,0.263499,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S1,KF,float64,time_per_step,73.4,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float64,rmse,0.263499,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float64,max_abs_diff,1.36424e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float64,time_per_step,61.9,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float64,rmse,0.263499,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float64,max_abs_diff,9.09495e-13,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float64,time_per_step,30.7,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S2,KF,float64,rmse,0.265973,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S2,KF,float64,time_per_step,208.4,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float64,rmse,0.265973,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float64,max_abs_diff,3.25784e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float64,time_per_step,199.9,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float64,rmse,0.265973,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float64,max_abs_diff,2.8324e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float64,time_per_step,58.4,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S5,KF,float64,rmse,0.0612314,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S5,KF,float64,time_per_step,4141.4,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float64,rmse,0.0612314,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float64,max_abs_diff,1.36424e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float64,time_per_step,5209.7,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float64,rmse,0.0612314,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float64,max_abs_diff,1.36424e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float64,time_per_step,2150.6,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,EKF,float64,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,EKF,float64,nees,3.95791,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,UKF,float64,rmse,0.21443,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S3,UKF,float64,nees,3.95789,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float64,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float64,nees,3.95791,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S4,KF,float64,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S4,KF,float64,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S4,KF,float64,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S1,KF,float32,rmse,0.263504,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S1,KF,float32,time_per_step,31.5,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float32,rmse,0.2635,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float32,max_abs_diff,0.000646114,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float32,time_per_step,57.5,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float32,rmse,0.263502,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float32,max_abs_diff,0.000649929,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float32,time_per_step,29.9,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,rmse,0.26597,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,time_per_step,55.9,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float32,rmse,0.265971,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float32,max_abs_diff,0.000653267,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float32,time_per_step,198.6,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,rmse,0.265971,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,max_abs_diff,0.000605583,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,time_per_step,63.2,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S5,KF,float32,rmse,0.0612313,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S5,KF,float32,time_per_step,1825.6,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float32,rmse,0.0612317,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float32,max_abs_diff,0.000976562,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float32,time_per_step,5472.1,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float32,rmse,0.0612317,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float32,max_abs_diff,0.000976562,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float32,time_per_step,2045.2,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,EKF,float32,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,EKF,float32,nees,3.95792,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,UKF,float32,rmse,0.21443,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,UKF,float32,nees,3.95789,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float32,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float32,nees,3.95792,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S4,KF,float32,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S4,KF,float32,steps_to_failure,0,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S4,KF,float32,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S1,KF,float64,rmse,0.263499,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S1,KF,float64,time_per_step,35.1,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float64,rmse,0.263499,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float64,max_abs_diff,1.36424e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S1,KF,float64,time_per_step,59.9,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float64,rmse,0.263499,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float64,max_abs_diff,9.09495e-13,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S1,KF,float64,time_per_step,30.7,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float64,rmse,0.265973,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float64,time_per_step,66.4,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float64,rmse,0.265973,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float64,max_abs_diff,3.25784e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S2,KF,float64,time_per_step,197.5,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float64,rmse,0.265973,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float64,max_abs_diff,2.8324e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float64,time_per_step,58.2,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S5,KF,float64,rmse,0.0612314,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S5,KF,float64,time_per_step,1949.5,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float64,rmse,0.0612314,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float64,max_abs_diff,1.36424e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S5,KF,float64,time_per_step,5247.3,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float64,rmse,0.0612314,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float64,max_abs_diff,1.36424e-12,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S5,KF,float64,time_per_step,2149.3,ns,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,EKF,float64,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,EKF,float64,nees,3.95791,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,UKF,float64,rmse,0.21443,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S3,UKF,float64,nees,3.95789,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float64,rmse,0.214435,state,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S3,EKF,float64,nees,3.95791,-,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c-specialized,0.1.0,S4,KF,float64,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+naive,textbook,S4,KF,float64,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+tinyekf,ba0d2a9,S4,KF,float64,steps_to_failure,1e+06,steps,941a6e3,arm64,Darwin,clang-21.0.0,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,instructions_per_step,5456.1,instructions,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,flash_bytes,12188,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,ram_bytes,176,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c,0.1.0,S2,KF,float32,stack_bytes,512,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,instructions_per_step,3757.1,instructions,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,flash_bytes,13860,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,ram_bytes,176,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+kalman-c-specialized,0.1.0,S2,KF,float32,stack_bytes,512,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,instructions_per_step,4763.8,instructions,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,flash_bytes,10720,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,ram_bytes,268,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+naive,textbook,S2,KF,float32,stack_bytes,688,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,instructions_per_step,6607.9,instructions,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,flash_bytes,13716,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,ram_bytes,164,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05
+tinyekf,ba0d2a9,S2,KF,float32,stack_bytes,740,bytes,941a6e3,cortex-m4f (qemu netduinoplus2),bare-metal,arm-none-eabi-gcc-14.2.1+qemu-11.1.2,2026-10-05

@@ -10,7 +10,7 @@ Kalman filters for microcontrollers, in plain C99: no heap, no surprises, and nu
 - **Numerically robust.** The Joseph-form covariance update and Cholesky solves keep P symmetric positive-definite. On an ill-conditioned problem, the textbook filter fails at its first step in `float`; kalman-c runs 1,000,000 steps.
 - **Linear KF, EKF and UKF** share one state struct and one calling pattern.
 - **Errors are returned, never silent.** NaN or Inf inputs, a singular innovation covariance, and failing model callbacks all return an error code, and leave the filter state byte-for-byte unchanged.
-- **Configurable at compile time:** `float` or `double`, the maximum sizes, and optional constant-size specializations (`KF_SPECIALIZE`) that match TinyEKF's speed.
+- **Configurable at compile time:** `float` or `double`, the maximum sizes, and optional constant-size specializations (`KF_SPECIALIZE`) that run within 15% of TinyEKF, and faster on the 15-state problem.
 - **Diagnostics.** The normalized innovation squared (NIS) after every update. Monte Carlo tests check NIS and NEES against their chi-squared bounds.
 - **Checked:** clang-tidy, cppcheck, and an enforced subset of MISRA C:2012 (see `scripts/check_misra.py`).
 
@@ -94,9 +94,9 @@ What it shows so far:
 - **Accuracy:** kalman-c matches the baselines on every scenario.
 - **Stability:** on S4 in float32, the textbook filter fails at the first step. kalman-c and TinyEKF both survive 1,000,000 steps. TinyEKF fails at R = 1e-9 (see `test_stability`), but the frozen scenario uses 1e-8.
 - **Speed:**
-  - The specialized build matches TinyEKF on S2 and is within about 12% on S5, while keeping the Joseph form, input validation, and leaving the state unchanged on error.
-  - On the smallest problem (S1), fixed per-step costs still leave it behind: 1.3× in float32 and 1.8× in float64.
-  - The default build is 2–3× slower than TinyEKF, because its sizes are only known at run time.
+  - The specialized build beats TinyEKF on the 15-state S5 (1,826 vs 2,045 ns in float32, 1,950 vs 2,149 in float64) and on S2 in float32 (56 vs 63 ns).
+  - It is 5–15% slower on the 2-state S1 and on float64 S2. At those sizes, the fixed per-step cost of input validation and the copy-on-success that keeps the state unchanged on errors matters most.
+  - The default build is 2.2–3.2× slower than TinyEKF, because its sizes are only known at run time.
 
 **Embedded** (STM32F405 / Cortex-M4F, emulated with QEMU 11.1.2 `netduinoplus2`, built with `arm-none-eabi-gcc` 14.2.1 using `-O2 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard`):
 
@@ -104,29 +104,29 @@ What it shows so far:
 - `instructions_per_step` is an exact count of the instructions QEMU executes per predict+update. **It is not cycles**: QEMU doesn't model the pipeline, flash wait states or the DWT counter. The guide's `cycles_per_step` still needs a real board.
 - Flash includes the 9,068-byte harness and scenario data that every image shares. RAM is `data + bss`; `stack_bytes` is the measured peak stack use.
 - Results:
-  - The specialized build runs the fewest instructions: 3,602 per step, against 4,764 for the textbook filter and 6,608 for TinyEKF. It costs about 1.7 KB more flash than the default build.
+  - The specialized build runs the fewest instructions: 3,757 per step, against 4,764 for the textbook filter and 6,608 for TinyEKF. It costs about 1.7 KB more flash than the default build (13,860 vs 12,188 bytes).
   - TinyEKF's count includes software double-precision math. It calls `sqrt()` on a double, and the M4F has only a single-precision FPU. kalman-c links no double-precision code.
-  - kalman-c also uses the least stack of the three filters: 512 bytes, against 688 for naive and 740 for TinyEKF.
+  - kalman-c also uses the least stack of the three filters: 512 bytes, against 688 for the textbook filter and 740 for TinyEKF.
 
 <!-- BENCH:START -->
 | Scenario | Filter | Precision | Metric | kalman-c | kalman-c-specialized | naive | tinyekf | Ours vs best other |
 |---|---|---|---|---|---|---|---|---|
-| S1 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0006236 | 0.0006274 | n/a |
+| S1 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0006461 | 0.0006499 | n/a |
 | S1 | KF | float32 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 0.2635 | 1.00x |
-| S1 | KF | float32 | time_per_step (ns) | 94.5 | 33.5 | 55.8 | 26.4 | 0.28x |
+| S1 | KF | float32 | time_per_step (ns) | 69.4 | 31.5 | 57.5 | 29.9 | 0.43x |
 | S1 | KF | float64 | max_abs_diff (state) | n/a | n/a | 1.364e-12 | 9.095e-13 | n/a |
 | S1 | KF | float64 | rmse (state) | 0.2635 | 0.2635 | 0.2635 | 0.2635 | 1.00x |
-| S1 | KF | float64 | time_per_step (ns) | 104.1 | 49.7 | 65.7 | 27.8 | 0.27x |
-| S2 | KF | float32 | flash_bytes (bytes) | 1.231e+04 | 1.4e+04 | 1.072e+04 | 1.372e+04 | 0.87x |
-| S2 | KF | float32 | instructions_per_step (instructions) | 5527 | 3602 | 4764 | 6608 | 0.86x |
-| S2 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0005245 | 0.0006514 | n/a |
+| S1 | KF | float64 | time_per_step (ns) | 73.4 | 35.1 | 59.9 | 30.7 | 0.42x |
+| S2 | KF | float32 | flash_bytes (bytes) | 1.219e+04 | 1.386e+04 | 1.072e+04 | 1.372e+04 | 0.88x |
+| S2 | KF | float32 | instructions_per_step (instructions) | 5456 | 3757 | 4764 | 6608 | 0.87x |
+| S2 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0006533 | 0.0006056 | n/a |
 | S2 | KF | float32 | ram_bytes (bytes) | 176 | 176 | 268 | 164 | 0.93x |
 | S2 | KF | float32 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
-| S2 | KF | float32 | stack_bytes (bytes) | 512 | 504 | 688 | 740 | 1.34x |
-| S2 | KF | float32 | time_per_step (ns) | 192.9 | 54.4 | 192.5 | 57.2 | 0.30x |
+| S2 | KF | float32 | stack_bytes (bytes) | 512 | 512 | 688 | 740 | 1.34x |
+| S2 | KF | float32 | time_per_step (ns) | 201.4 | 55.9 | 198.6 | 63.2 | 0.31x |
 | S2 | KF | float64 | max_abs_diff (state) | n/a | n/a | 3.258e-12 | 2.832e-12 | n/a |
 | S2 | KF | float64 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
-| S2 | KF | float64 | time_per_step (ns) | 192.4 | 69.1 | 196.7 | 56.5 | 0.29x |
+| S2 | KF | float64 | time_per_step (ns) | 208.4 | 66.4 | 197.5 | 58.2 | 0.28x |
 | S3 | EKF | float32 | nees (-) | 3.958 | 3.958 | n/a | 3.958 | – |
 | S3 | EKF | float32 | rmse (state) | 0.2144 | 0.2144 | n/a | 0.2144 | 1.00x |
 | S3 | EKF | float64 | nees (-) | 3.958 | 3.958 | n/a | 3.958 | – |
@@ -139,10 +139,10 @@ What it shows so far:
 | S4 | KF | float64 | steps_to_failure (steps) | 1e+06 | 1e+06 | 1e+06 | 1e+06 | 1.00x |
 | S5 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0009766 | 0.0009766 | n/a |
 | S5 | KF | float32 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 0.06123 | 1.00x |
-| S5 | KF | float32 | time_per_step (ns) | 4748 | 2263 | 5417 | 2019 | 0.43x |
+| S5 | KF | float32 | time_per_step (ns) | 4406 | 1826 | 5472 | 2045 | 0.46x |
 | S5 | KF | float64 | max_abs_diff (state) | n/a | n/a | 1.364e-12 | 1.364e-12 | n/a |
 | S5 | KF | float64 | rmse (state) | 0.06123 | 0.06123 | 0.06123 | 0.06123 | 1.00x |
-| S5 | KF | float64 | time_per_step (ns) | 4400 | 2338 | 5100 | 2113 | 0.48x |
+| S5 | KF | float64 | time_per_step (ns) | 4141 | 1950 | 5247 | 2149 | 0.52x |
 <!-- BENCH:END -->
 
 ## License
