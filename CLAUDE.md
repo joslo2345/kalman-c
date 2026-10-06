@@ -88,18 +88,25 @@ These were agreed with the user after v0.3.0. Pick them up in this order unless 
 4. **Small-problem overhead.** The specialized S1 is 10–20% behind TinyEKF; the cost is per-step validation and copy-on-success. Look for savings that keep the "state unchanged on error" guarantee.
 5. **A specialized UKF.** It doesn't use `KF_SPECIALIZE` yet.
 6. **The guide's longer-term plan:** move `tests/vectors/` into a shared test-vectors repository, for C++, Python and Rust implementations.
-7. **GitHub settings the user hasn't decided yet,** as of v0.3.0: secret scanning plus push protection, Dependabot (version updates would keep the SHA-pinned actions current), and branch protection on `main`. Branch protection would mean working through pull requests instead of pushing to `main`.
+7. **GitHub settings, decided by the user after v0.3.0:**
+   - **On:** secret scanning with push protection, Dependabot version updates for the SHA-pinned actions (`.github/dependabot.yml`), and branch protection on `main`.
+   - **Off, by choice:** Dependabot security alerts.
 
 At each release: re-record the regression baseline on CI from the released code, using a throwaway branch without `results/regression-baseline.json`, then commit the artifact. Also re-run the benchmarks on a quiet machine.
 
 ## Versioning and releases
+
+**`main` is protected.** All 12 CI checks must pass and the branch must be up to date, admins included. Force-pushes and deletion are blocked, and no review is required (the repository has a single maintainer).
+- **How to make changes:** create a branch, push it, open a PR with `gh pr create`, wait for CI, then `gh pr merge --squash --delete-branch`. Direct pushes to `main` are rejected.
+- **Tags aren't protected,** so releases still work by pushing a tag after the release PR is merged.
+- **If CI job names change** (for example, a new matrix entry), update the required checks in the branch protection settings (`gh api -X PUT repos/joslo2345/kalman-c/branches/main/protection`), or every merge will block on a check that never reports.
 
 - **The version has one source:** `#define KALMAN_C_VERSION` in `include/kalman/kf_config.h`. The top-level CMake reads `project(VERSION)` from it, and so do the bench and `run_embedded.py`. `library.json` and `CHANGELOG.md` must be updated by hand to match.
 - **To release:**
   1. Bump `KALMAN_C_VERSION` and `library.json`.
   2. Add a `## [X.Y.Z]` section to `CHANGELOG.md`.
   3. Re-run the benchmarks (desktop and embedded) so the README table matches the released code, then `python3 scripts/make_readme_charts.py`.
-  4. Commit, wait for CI to pass, then push the tag `vX.Y.Z`.
+  4. Merge the release PR once CI passes, then push the tag `vX.Y.Z` on the merged commit.
   5. Re-record the regression baseline from the released code. Download `results/regression-baseline.json` from the `benchmarks` job's `comparison-report` artifact after running `check_regression.py --record`, or delete the file so the next run records it; then commit it.
 
   `.github/workflows/release.yml` then checks that the tag matches the version, builds and tests the single header, and publishes a GitHub Release. The release body is that version's changelog section, and the assets are `kalman_c.h` and the Arduino zip.
