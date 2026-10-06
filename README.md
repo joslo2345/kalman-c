@@ -109,11 +109,12 @@ What it shows so far:
 - `instructions_per_step` is an exact count of the instructions QEMU executes per predict+update. **It is not cycles**: QEMU doesn't model the pipeline, flash wait states or the DWT counter. The guide's `cycles_per_step` still needs a real board.
 - Flash includes the 9,068-byte harness and scenario data that every image shares. RAM is `data + bss`; `stack_bytes` is the measured peak stack use.
 - Results:
-  - The specialized build runs the fewest instructions: 3,757 per step, against 4,764 for the textbook filter and 6,608 for TinyEKF. It costs about 1.7 KB more flash than the default build (13,860 vs 12,188 bytes).
+  - The specialized build runs the fewest instructions: 3,745 per step, against 4,764 for the textbook filter and 6,608 for TinyEKF. It costs about 1.7 KB more flash than the default build (13,328 vs 11,652 bytes).
   - TinyEKF's count includes software double-precision math. It calls `sqrt()` on a double, and the M4F has only a single-precision FPU. kalman-c links no double-precision code.
-  - kalman-c also uses the least stack of the three filters: 512 bytes, against 688 for the textbook filter and 740 for TinyEKF.
+  - kalman-c also uses the least stack of the three filters: about 520 bytes, against 688 for the textbook filter and 740 for TinyEKF.
 - **No FPU (STM32F205 / Cortex-M3, QEMU `netduino2`; rows marked `@m3`):** float filters run on software floating point.
   - The fixed-point filter (`q20`, Q11.20) runs about 14,000 instructions per step, against about 26,300 for the float filter and about 24,800 for TinyEKF.
+  - The cost is about 3 KB more flash than the float build (17,000 vs 14,020 bytes): the overflow-checked 64-bit arithmetic makes the update function larger.
   - On the M4F, the same fixed-point code runs about 14,300, which is 2.7× more than the hardware-float filter. So use fixed point only on parts without an FPU.
 - **Fixed point on the desktop scenarios** (`q18`, Q13.18, so the S1 and S2 positions of up to about 5,254 fit): RMSE matches the float filter on S1 and S2.
   - S5 cannot be represented: its 1e-6 initial bias variance is below Q13.18's resolution of 3.8e-6 and rounds to zero, which leaves P singular. Problems with such a dynamic range need floating point or rescaled units.
@@ -136,14 +137,14 @@ What it shows so far:
 | S1 | SRKF | float64 | max_abs_diff (state) | 1.364e-12 | 1.364e-12 | n/a | n/a | n/a |
 | S1 | SRKF | float64 | rmse (state) | 0.2635 | 0.2635 | n/a | n/a | n/a |
 | S1 | SRKF | float64 | time_per_step (ns) | 79.7 | 68 | n/a | n/a | n/a |
-| S2 | KF | float32 | flash_bytes (bytes) | 1.166e+04 | 1.333e+04 | 1.072e+04 | 1.372e+04 | 0.92x |
+| S2 | KF | float32 | flash_bytes (bytes) | 1.165e+04 | 1.333e+04 | 1.072e+04 | 1.372e+04 | 0.92x |
 | S2 | KF | float32 | instructions_per_step (instructions) | 5237 | 3745 | 4764 | 6608 | 0.91x |
 | S2 | KF | float32 | max_abs_diff (state) | n/a | n/a | 0.0006533 | 0.0006056 | n/a |
 | S2 | KF | float32 | ram_bytes (bytes) | 176 | 176 | 268 | 164 | 0.93x |
 | S2 | KF | float32 | rmse (state) | 0.266 | 0.266 | 0.266 | 0.266 | 1.00x |
 | S2 | KF | float32 | stack_bytes (bytes) | 520 | 516 | 688 | 740 | 1.32x |
 | S2 | KF | float32 | time_per_step (ns) | 200.5 | 55.2 | 198.3 | 63.1 | 0.31x |
-| S2 | KF | float32@m3 | flash_bytes (bytes) | 1.402e+04 | n/a | n/a | 1.537e+04 | 1.10x |
+| S2 | KF | float32@m3 | flash_bytes (bytes) | 1.402e+04 | n/a | n/a | 1.536e+04 | 1.10x |
 | S2 | KF | float32@m3 | instructions_per_step (instructions) | 2.633e+04 | n/a | n/a | 2.481e+04 | 0.94x |
 | S2 | KF | float32@m3 | ram_bytes (bytes) | 256 | n/a | n/a | 164 | 0.64x |
 | S2 | KF | float32@m3 | stack_bytes (bytes) | 648 | n/a | n/a | 780 | 1.20x |
@@ -153,15 +154,15 @@ What it shows so far:
 | S2 | KF | q18 | max_abs_diff (state) | 0.000273 | 0.000273 | n/a | n/a | n/a |
 | S2 | KF | q18 | rmse (state) | 0.266 | 0.266 | n/a | n/a | n/a |
 | S2 | KF | q18 | time_per_step (ns) | 632.2 | 619.7 | n/a | n/a | n/a |
-| S2 | KF | q20 | flash_bytes (bytes) | 2.496e+04 | n/a | n/a | n/a | n/a |
-| S2 | KF | q20 | instructions_per_step (instructions) | 1.434e+04 | n/a | n/a | n/a | n/a |
-| S2 | KF | q20 | ram_bytes (bytes) | 180 | n/a | n/a | n/a | n/a |
-| S2 | KF | q20 | stack_bytes (bytes) | 552 | n/a | n/a | n/a | n/a |
-| S2 | KF | q20@m3 | flash_bytes (bytes) | 2.504e+04 | n/a | n/a | n/a | n/a |
+| S2 | KF | q20 | flash_bytes (bytes) | 1.692e+04 | n/a | n/a | n/a | n/a |
+| S2 | KF | q20 | instructions_per_step (instructions) | 1.433e+04 | n/a | n/a | n/a | n/a |
+| S2 | KF | q20 | ram_bytes (bytes) | 176 | n/a | n/a | n/a | n/a |
+| S2 | KF | q20 | stack_bytes (bytes) | 544 | n/a | n/a | n/a | n/a |
+| S2 | KF | q20@m3 | flash_bytes (bytes) | 1.7e+04 | n/a | n/a | n/a | n/a |
 | S2 | KF | q20@m3 | instructions_per_step (instructions) | 1.4e+04 | n/a | n/a | n/a | n/a |
-| S2 | KF | q20@m3 | ram_bytes (bytes) | 180 | n/a | n/a | n/a | n/a |
-| S2 | KF | q20@m3 | stack_bytes (bytes) | 552 | n/a | n/a | n/a | n/a |
-| S2 | SRKF | float32 | flash_bytes (bytes) | 1.226e+04 | n/a | n/a | n/a | n/a |
+| S2 | KF | q20@m3 | ram_bytes (bytes) | 176 | n/a | n/a | n/a | n/a |
+| S2 | KF | q20@m3 | stack_bytes (bytes) | 544 | n/a | n/a | n/a | n/a |
+| S2 | SRKF | float32 | flash_bytes (bytes) | 1.225e+04 | n/a | n/a | n/a | n/a |
 | S2 | SRKF | float32 | instructions_per_step (instructions) | 4981 | n/a | n/a | n/a | n/a |
 | S2 | SRKF | float32 | max_abs_diff (state) | 0.0009766 | 0.0009766 | n/a | n/a | n/a |
 | S2 | SRKF | float32 | ram_bytes (bytes) | 296 | n/a | n/a | n/a | n/a |
