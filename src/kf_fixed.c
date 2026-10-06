@@ -24,9 +24,18 @@ static int fx_dims_ok(const kf_fx_state *kf) {
     return (kf->n >= 1) && (kf->n <= KF_MAX_STATE) && (kf->m >= 1) && (kf->m <= KF_MAX_MEAS);
 }
 
+/* The int64 limits, derived without the INT64_* macros, whose spelling differs
+ * between C libraries and trips static checkers on some of them. */
+static int64_t wide_max(void) {
+    const uint64_t umax = ~(uint64_t)0U >> 1U;
+    return (int64_t)umax;
+}
+
 /* a + b, or *ovf = 1. */
 static int64_t wide_add(int64_t a, int64_t b, int *ovf) {
-    if (((b > 0) && (a > (INT64_MAX - b))) || ((b < 0) && (a < (INT64_MIN - b)))) {
+    const int64_t max = wide_max();
+    const int64_t min = -max - 1;
+    if (((b > 0) && (a > (max - b))) || ((b < 0) && (a < (min - b)))) {
         *ovf = 1;
         return 0;
     }
@@ -35,7 +44,9 @@ static int64_t wide_add(int64_t a, int64_t b, int *ovf) {
 
 /* a - b, or *ovf = 1. */
 static int64_t wide_sub(int64_t a, int64_t b, int *ovf) {
-    if (((b < 0) && (a > (INT64_MAX + b))) || ((b > 0) && (a < (INT64_MIN + b)))) {
+    const int64_t max = wide_max();
+    const int64_t min = -max - 1;
+    if (((b < 0) && (a > (max + b))) || ((b > 0) && (a < (min + b)))) {
         *ovf = 1;
         return 0;
     }
