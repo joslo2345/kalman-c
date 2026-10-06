@@ -9,6 +9,13 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(KF_USE_DOUBLE "Use double precision" OFF)
 option(KF_BUILD_TESTS "Build tests" ON)
 option(KF_BUILD_BENCH "Build the comparison benchmarks" OFF)
+set(KF_MAX_STATE "" CACHE STRING "Override the maximum state size (default 12)")
+set(KF_MAX_MEAS "" CACHE STRING "Override the maximum measurement size (default 6)")
+
+# Scenario S5 has 15 states and 6 measurements.
+if(KF_BUILD_BENCH AND KF_MAX_STATE STREQUAL "")
+    set(KF_MAX_STATE 15)
+endif()
 
 add_library(kalman STATIC
     src/kf_linalg.c src/kf_linear.c src/kf_ekf.c src/kf_ukf.c)
@@ -25,6 +32,12 @@ endif()
 if(KF_USE_DOUBLE)
     target_compile_definitions(kalman PUBLIC KF_USE_DOUBLE)
 endif()
+if(NOT KF_MAX_STATE STREQUAL "")
+    target_compile_definitions(kalman PUBLIC KF_MAX_STATE=${KF_MAX_STATE})
+endif()
+if(NOT KF_MAX_MEAS STREQUAL "")
+    target_compile_definitions(kalman PUBLIC KF_MAX_MEAS=${KF_MAX_MEAS})
+endif()
 
 if(KF_BUILD_TESTS)
     enable_testing()
@@ -32,5 +45,5 @@ if(KF_BUILD_TESTS)
 endif()
 
 if(KF_BUILD_BENCH)
-    message(FATAL_ERROR "KF_BUILD_BENCH: bench/ is not implemented yet (see Step 8 of the guide)")
+    add_subdirectory(bench)
 endif()

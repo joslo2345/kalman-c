@@ -11,8 +11,11 @@ Done so far:
 - Steps 1–5: scaffolding.
 - Steps 6.1–6.4: `kf_linalg`, the linear KF, the EKF, and the UKF.
 - Step 7: baselines, scenarios, and comparison tests.
+- Step 8 (desktop part): the frozen S1–S5 vectors, the benchmark harness, and the README table.
 
-Still to do: Step 8 (benchmarks and comparison numbers), Steps 9–12, and Steps 6.5 (square-root variant) and 6.6 (fixed-point). The stability test shows the Joseph-form KF stays positive-definite for 1M float steps where the baselines fail, so the square-root variant is not urgent.
+Still to do: the Step 8 embedded numbers (cycles, flash, RAM on an STM32 board), Steps 9–12, and Steps 6.5 (square-root variant) and 6.6 (fixed-point).
+
+**Known issue:** kalman-c is 4–6× slower per step than TinyEKF, and about 1.5–2× slower than the naive filter (see the README table). TinyEKF gets its speed from compile-time dimensions. Our extra cost is the Joseph form, the Cholesky solve, and the validation and copy passes. The stability test shows the Joseph-form KF stays positive-definite for 1M float steps where the baselines fail, so the square-root variant is not urgent.
 
 The KF and EKF share one covariance implementation. `src/kf_internal.h` declares `kf_core_predict`, which takes a predicted x and F, and `kf_core_update`, which takes an innovation y and H. The public KF and EKF functions only compute those inputs and delegate. As a result, an EKF with linear callbacks is bit-identical to the KF, and `test_ekf` asserts this. EKF callbacks return the model value and its Jacobian together, take a `void *ctx`, and turn a non-zero return into `KF_ERR_MODEL_FAILED`.
 
@@ -71,15 +74,18 @@ Add new tests in `tests/CMakeLists.txt` with `kf_add_test(<name> <source>)`. Eve
 
 On this macOS machine, the default SDK (MacOSX27.0, from Command Line Tools) can't be read by Xcode's `ld`, so any link fails with "tapi error: malformed file". Work around it with `export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk` before you configure.
 
-Benchmarks (planned; `bench/` doesn't exist yet, so `KF_BUILD_BENCH=ON` currently stops with a fatal error):
+Benchmarks. Run once per precision, then regenerate the README table:
 
 ```bash
-# Release build, appends to results/results.csv, regenerates README table
-cmake -B build-bench -DCMAKE_BUILD_TYPE=Release -DKF_BUILD_BENCH=ON
+cmake -B build-bench -DCMAKE_BUILD_TYPE=Release -DKF_BUILD_BENCH=ON -DKF_BUILD_TESTS=OFF   # add -DKF_USE_DOUBLE=ON for float64
 cmake --build build-bench
-./build-bench/bench "$(git rev-parse --short HEAD),$(uname -m),$(uname -s),gcc-$(gcc -dumpversion),$(date -I)" >> results/results.csv
-python scripts/make_table.py results/results.csv kalman-c
+./build-bench/bench/bench "$(git rev-parse --short HEAD),$(uname -m),$(uname -s),clang-$(cc -dumpversion),$(date +%F)" >> results/results.csv
+python3 scripts/update_readme_table.py results/results.csv kalman-c
 ```
+
+- The executable is at `build-bench/bench/bench`, not `build-bench/bench` as the guide says.
+- `KF_BUILD_BENCH` raises `KF_MAX_STATE` to 15 for S5. The `KF_MAX_STATE` and `KF_MAX_MEAS` cache variables override the defaults in any build.
+- Commit the code before running the benchmark, so the recorded commit hash matches the code that produced the numbers.
 
 ## Testing and benchmarking model
 
@@ -93,4 +99,12 @@ python scripts/make_table.py results/results.csv kalman-c
 - Comparison tests print `[report] ...` lines for baseline behaviour that isn't guaranteed, such as the step where a baseline loses positive-definiteness. Those lines feed the CI comparison report. Don't assert on baseline failures.
 - Consistency checks the average NIS over all trials and steps, using chi-squared bounds with TRIALS·STEPS·m degrees of freedom. NEES is checked only at the final step across trials, because errors are correlated over time. The bounds use the Wilson–Hilferty approximation.
 - Timing belongs in `bench/`, not in unit tests. Every library gets a runner with the signature `int run_X(const scenario *sc, run_result *out)`. Only predict+update is timed.
-- The benchmark scenarios S1–S5 are shared data files in a test-vectors Git submodule, and the C, C++, Python and Rust sibling repos all use them. Treat them as frozen: don't change them to improve results. The `tests/scenarios/` generators are for tests, not for those published numbers.
+- The benchmark scenarios S1–S5 are the frozen files in `tests/vectors/`. The guide wants them in a test-vectors submodule shared by the C, C++, Python and Rust repos. That shared repo doesn't exist yet, so the folder is laid out to become that submodule unchanged.
+  - `scripts/gen_vectors.py` generates them deterministically. It documents the file format, which is plain text with `kalman-vectors 1` at the top.
+  - Treat them as frozen. Don't regenerate them or change them to improve results.
+  - The `tests/scenarios/` generators are for tests, not for the published numbers.
+- S4 stores `data zero`. A linear KF's covariance doesn't depend on z, so stability depends only on the model. R = 1e-8 was chosen because TinyEKF survives it; it fails at 1e-9, and picking that would be cherry-picking.
+- The benchmark lives in `bench/`. Each runner in `bench/runners/` shares the signature `int run_X(const scenario *, run_result *)`.
+  - With `measure = 0` a runner does only predict and update, for timing. With `measure = 1` it collects RMSE, NEES, and positive-definiteness through `metrics.c`.
+  - TinyEKF is built once per dimension (`tinyekf_{2x1,4x2,15x6}.c`) from `tinyekf_template.h`, and uses `ekf_t` directly.
+  - The bench reuses `tests/baselines/`. It doesn't need the test targets.
