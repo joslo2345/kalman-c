@@ -150,7 +150,8 @@ python3 scripts/update_readme_table.py results/results.csv kalman-c
 Static analysis. CI runs all of this, in the `static-analysis` job:
 
 ```bash
-clang-format --dry-run --Werror <files>          # pinned: clang-format 23.1.2 (PyPI wheel)
+clang-format --dry-run --Werror <files>          # pinned: clang-format 23.1.2 (PyPI wheel); use CI's exact list:
+#   python3 -c "import yaml,glob; r=[s for s in yaml.safe_load(open('.github/workflows/ci.yml'))['jobs']['static-analysis']['steps'] if s.get('name')=='clang-format'][0]['run']; print(' '.join(sorted({f for p in r.split('--Werror',1)[1].split() for f in glob.glob(p)})))" | xargs clang-format --dry-run --Werror
 clang-tidy --quiet src/*.c -- -std=c99 -Iinclude -Isrc [-DKF_USE_DOUBLE | "-DKF_SPECIALIZE=KF_SIZE(4,2)"]   # pinned: 22.1.8
 cppcheck --std=c99 --enable=warning,style,performance,portability --inline-suppr --error-exitcode=1 \
   --suppress=missingIncludeSystem -Iinclude -Isrc -UKF_SPECIALIZE src/
