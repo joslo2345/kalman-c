@@ -17,8 +17,8 @@ void filter_init(void) {
     memcpy(kf.R, s2_R, sizeof s2_R);
 }
 
-int filter_step(const float *z) {
-    return naive_kf_step(&kf, z);
+int filter_step(int k) {
+    return naive_kf_step(&kf, s2_z[k]);
 }
 
 const void *filter_x(void) {

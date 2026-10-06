@@ -21,7 +21,7 @@ int main(void) {
 
     filter_init();
     for (int k = 0; k < steps; ++k) {
-        if (filter_step(s2_z[k]) != 0) {
+        if (filter_step(k) != 0) {
             sh_puts("fw: step failed at ");
             sh_put_int(k);
             sh_puts("\n");

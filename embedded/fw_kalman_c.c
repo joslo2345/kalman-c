@@ -14,10 +14,10 @@ void filter_init(void) {
     memcpy(kf.R, s2_R, sizeof s2_R);
 }
 
-int filter_step(const float *z) {
+int filter_step(int k) {
     if (kf_predict(&kf, s2_F) != KF_OK)
         return 1;
-    return kf_update(&kf, z, s2_H) != KF_OK;
+    return kf_update(&kf, s2_z[k], s2_H) != KF_OK;
 }
 
 const void *filter_x(void) {

@@ -14,13 +14,12 @@ void filter_init(void) {
     memcpy(ekf.P, s2_P0, sizeof s2_P0);
 }
 
-/* TinyEKF takes f(x) and h(x) precomputed; its own _mulvec computes them. */
-int filter_step(const float *z) {
+int filter_step(int k) {
     float fx[EKF_N], hx[EKF_M];
     _mulvec(s2_F, ekf.x, fx, EKF_N, EKF_N);
     ekf_predict(&ekf, fx, s2_F, s2_Q);
     _mulvec(s2_H, ekf.x, hx, EKF_M, EKF_N);
-    return !ekf_update(&ekf, z, hx, s2_H, s2_R);
+    return !ekf_update(&ekf, s2_z[k], hx, s2_H, s2_R);
 }
 
 const void *filter_x(void) {

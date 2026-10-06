@@ -18,8 +18,8 @@ void filter_init(void) {
         x[i] = s2_x0[i];
 }
 
-int filter_step(const float *z) {
-    sink = z[0] + z[1];
+int filter_step(int k) {
+    sink = s2_z[k][0] + s2_z[k][1];
     return 0;
 }
 

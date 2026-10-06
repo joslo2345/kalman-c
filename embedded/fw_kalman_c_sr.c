@@ -14,10 +14,10 @@ void filter_init(void) {
     kf_sr_set_R(&sr, s2_R);
 }
 
-int filter_step(const float *z) {
+int filter_step(int k) {
     if (kf_sr_predict(&sr, s2_F) != KF_OK)
         return 1;
-    return kf_sr_update(&sr, z, s2_H) != KF_OK;
+    return kf_sr_update(&sr, s2_z[k], s2_H) != KF_OK;
 }
 
 const void *filter_x(void) {
