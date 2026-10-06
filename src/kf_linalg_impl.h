@@ -9,6 +9,7 @@
 
 #include "kalman/kf_linalg.h"
 
+#include <float.h>
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
@@ -17,6 +18,12 @@
 #define KFI_INLINE static inline __attribute__((always_inline))
 #else
 #define KFI_INLINE static inline
+#endif
+
+#ifdef KF_USE_DOUBLE
+#define KFI_EPS DBL_EPSILON
+#else
+#define KFI_EPS FLT_EPSILON
 #endif
 
 #ifdef KF_USE_DOUBLE
@@ -228,6 +235,74 @@ KFI_INLINE int kfi_cholesky_ok(const kf_real *A, int n) {
         return 0;
     }
     return kfi_cholesky(L, A, n) == (int)KF_OK;
+}
+
+/* For a zero UD pivot at column j: 1 if the entries above it are negligible. */
+KFI_INLINE int kfi_ud_column_negligible(const kf_real *W, int n, int j, kf_real off_tol) {
+    for (int k = 0; k < j; ++k) {
+        if (!((W[k * n + j] <= off_tol) && (W[k * n + j] >= -off_tol))) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* Eliminate column j with pivot d: fill U's column j and update the upper
+ * triangle of the leading j x j block of W. */
+KFI_INLINE void kfi_ud_eliminate(kf_real *W, kf_real *U, int n, int j, kf_real d) {
+    const kf_real inv = (kf_real)1 / d;
+    for (int k = 0; k < j; ++k) {
+        const kf_real beta = W[k * n + j];
+        U[k * n + j] = beta * inv;
+        for (int i = 0; i <= k; ++i) {
+            W[i * n + k] -= beta * U[i * n + j];
+        }
+    }
+}
+
+/*
+ * UD factorization A = U diag(D) U^T with U unit upper triangular, for a
+ * symmetric A (n x n).
+ *
+ * With psd == 0 every pivot must be positive; tiny ones are fine, since a
+ * well-conditioned A is not required (that is the point of the UD filter).
+ * With psd != 0, a pivot within rounding of zero (|d| <= tol, relative to the
+ * largest diagonal entry) is accepted when the entries above it are also
+ * negligible: D[j] keeps a tiny positive value, or 0, and U's column is zero.
+ *
+ * Returns KF_ERR_NOT_POSITIVE_DEFINITE when A is indefinite, has a
+ * non-positive pivot with psd == 0, or is not finite.
+ */
+KFI_INLINE int kfi_ud_factor(kf_real *U, kf_real *D, const kf_real *A, int n, int psd) {
+    kf_real W[KF_MAX_DIM * KF_MAX_DIM];
+    kf_real max_diag = (kf_real)0;
+    for (int i = 0; i < n * n; ++i) {
+        W[i] = A[i];
+    }
+    for (int i = 0; i < n; ++i) {
+        if (A[i * n + i] > max_diag) {
+            max_diag = A[i * n + i];
+        }
+    }
+    const kf_real tol = (kf_real)n * KFI_EPS * max_diag;
+    const kf_real off_tol = KF_SQRT((kf_real)n * KFI_EPS) * max_diag;
+
+    kfi_mat_identity(U, n);
+    for (int j = n - 1; j >= 0; --j) {
+        const kf_real d = W[j * n + j];
+        if (!isfinite(d) || (d < -tol) || ((psd == 0) && !(d > (kf_real)0))) {
+            return KF_ERR_NOT_POSITIVE_DEFINITE;
+        }
+        if ((d > tol) || (psd == 0)) {
+            D[j] = d;
+            kfi_ud_eliminate(W, U, n, j, d);
+        } else if (kfi_ud_column_negligible(W, n, j, off_tol) != 0) {
+            D[j] = (d > (kf_real)0) ? d : (kf_real)0;
+        } else {
+            return KF_ERR_NOT_POSITIVE_DEFINITE;
+        }
+    }
+    return KF_OK;
 }
 
 /* A value is NaN or Inf exactly when its exponent bits are all ones, that is

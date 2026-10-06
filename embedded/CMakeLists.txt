@@ -24,7 +24,8 @@ add_custom_command(
 add_custom_target(fw_data DEPENDS ${CMAKE_BINARY_DIR}/fw_data.h)
 
 set(KALMAN_SOURCES
-    ${ROOT}/src/kf_linalg.c ${ROOT}/src/kf_linear.c ${ROOT}/src/kf_ekf.c ${ROOT}/src/kf_ukf.c)
+    ${ROOT}/src/kf_linalg.c ${ROOT}/src/kf_linear.c ${ROOT}/src/kf_ekf.c ${ROOT}/src/kf_ukf.c
+    ${ROOT}/src/kf_sqrt.c)
 
 # fw_<name>_1000 runs 1000 steps of S2; fw_<name>_0 is identical but runs none.
 function(add_firmware name)
@@ -53,5 +54,6 @@ add_firmware(empty SOURCES fw_empty.c)
 add_firmware(kalman_c SOURCES fw_kalman_c.c ${KALMAN_SOURCES} INCLUDES ${ROOT}/src)
 add_firmware(kalman_c_specialized SOURCES fw_kalman_c.c ${KALMAN_SOURCES}
     INCLUDES ${ROOT}/src DEFINES "KF_SPECIALIZE=KF_SIZE(4,2)")
+add_firmware(kalman_c_sr SOURCES fw_kalman_c_sr.c ${KALMAN_SOURCES} INCLUDES ${ROOT}/src)
 add_firmware(naive SOURCES fw_naive.c ${ROOT}/tests/baselines/naive_kf.c)
 add_firmware(tinyekf QUIET_SOURCES fw_tinyekf.c INCLUDES ${TINYEKF_DIR}/src)

@@ -5,6 +5,19 @@ All notable changes to this project are documented here. The format follows
 [semantic versioning](https://semver.org/). Before 1.0.0, minor versions may
 change the API.
 
+## [Unreleased]
+
+### Added
+
+- Square-root Kalman filter in UD form (`kf_sqrt.h`: `kf_sr_*`), linear and extended. It uses Bierman's measurement update, applied to measurements whitened by R's UD factors, and Thornton's weighted Gram-Schmidt predict. In `float`, at R = 1e-10, the position variance stays within 2.8e-7 of a float64 reference over 100,000 steps; the Joseph-form filter drifts to 1.4e-4.
+- `test_sqrt_accuracy`, which checks covariance accuracy against a float64 reference computed inside the test.
+- An `SRKF` row in the desktop and Cortex-M4F benchmarks.
+
+### Changed
+
+- The KF/EKF predict and update cores re-check `n` and `m` after model callbacks run, since `ctx` may alias the filter state.
+- The benchmark harness reports runners that fail instead of skipping them silently.
+
 ## [0.1.0] - 2026-10-05
 
 First release.

@@ -19,8 +19,10 @@ import zipfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Public headers in dependency order, then the implementation in dependency order.
-PUBLIC = ["kf_config.h", "kf_types.h", "kf_linalg.h", "kf_linear.h", "kf_ekf.h", "kf_ukf.h"]
-IMPL = ["kf_internal.h", "kf_linalg_impl.h", "kf_linalg.c", "kf_linear.c", "kf_ekf.c", "kf_ukf.c"]
+PUBLIC = ["kf_config.h", "kf_types.h", "kf_linalg.h", "kf_linear.h", "kf_ekf.h", "kf_ukf.h",
+          "kf_sqrt.h"]
+IMPL = ["kf_internal.h", "kf_linalg_impl.h", "kf_linalg.c", "kf_linear.c", "kf_ekf.c", "kf_ukf.c",
+        "kf_sqrt.c"]
 LOCAL_INCLUDE = re.compile(r'^\s*#include\s+"[^"]+"\s*$', re.M)
 SYSTEM_INCLUDE = re.compile(r"^\s*#include\s+<([^>]+)>\s*$", re.M)
 GUARD = re.compile(r"\A(?P<pre>(?:\s*/\*.*?\*/)?\s*)#ifndef (\w+)\n#define \2\n(?P<body>.*)#endif\s*\Z",

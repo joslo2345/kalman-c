@@ -24,11 +24,12 @@ import sys
 from datetime import date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LIBS = [  # (firmware name, library name in the table, version source)
-    ("kalman_c", "kalman-c", "kalman"),
-    ("kalman_c_specialized", "kalman-c-specialized", "kalman"),
-    ("naive", "naive", "naive"),
-    ("tinyekf", "tinyekf", "tinyekf"),
+LIBS = [  # (firmware name, library name in the table, version source, filter)
+    ("kalman_c", "kalman-c", "kalman", "KF"),
+    ("kalman_c_specialized", "kalman-c-specialized", "kalman", "KF"),
+    ("kalman_c_sr", "kalman-c", "kalman", "SRKF"),
+    ("naive", "naive", "naive", "KF"),
+    ("tinyekf", "tinyekf", "tinyekf", "KF"),
 ]
 STEPS = 1000
 
@@ -109,19 +110,19 @@ def main():
           file=sys.stderr)
 
     states = {}
-    for fw, lib, ver in LIBS:
+    for fw, lib, ver, filt in LIBS:
         n1, state, stack = qemu(elf(fw, STEPS), plugin)
         n0, _, _ = qemu(elf(fw, 0), plugin)
         flash, ram = size(elf(fw, STEPS), size_tool)
-        states[lib] = state
+        states[f"{lib} {filt}"] = state
         rows = [("instructions_per_step", f"{(n1 - n0) / STEPS:.1f}", "instructions"),
                 ("flash_bytes", flash, "bytes"),
                 ("ram_bytes", ram, "bytes"),
                 ("stack_bytes", stack, "bytes")]
         for metric, value, unit in rows:
-            print(f"{lib},{versions[ver]},S2,KF,float32,{metric},{value},{unit},{env}")
+            print(f"{lib},{versions[ver]},S2,{filt},float32,{metric},{value},{unit},{env}")
 
-    ref = states["kalman-c"]
+    ref = states["kalman-c KF"]
     for lib, state in states.items():
         print(f"# {lib} final state: {' '.join(state)}"
               f"{'' if state == ref else '  (differs from kalman-c in the last bits)'}",

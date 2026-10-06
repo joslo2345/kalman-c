@@ -37,10 +37,14 @@ kf_add_test(test_linear unit/test_linear.c)
 kf_add_test(test_ekf unit/test_ekf.c)
 kf_add_test(test_ukf unit/test_ukf.c)
 kf_add_test(test_errors unit/test_errors.c)
+kf_add_test(test_sqrt unit/test_sqrt.c)
+# test_sqrt also checks the internal QR and PSD Cholesky kernels.
+target_include_directories(test_sqrt PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
 kf_add_test(test_equivalence comparison/test_equivalence.c)
 kf_add_test(test_stability comparison/test_stability.c)
 kf_add_test(test_consistency comparison/test_consistency.c)
+kf_add_test(test_sqrt_accuracy comparison/test_sqrt_accuracy.c)
 set_tests_properties(test_stability PROPERTIES TIMEOUT 600)
 
 # Zero heap allocations, checked two ways: the library's symbol table on every

@@ -61,6 +61,10 @@ KF_ALWAYS_INLINE int core_predict(kf_state *kf, const kf_real *x_pred, const kf_
 }
 
 int kf_core_predict(kf_state *kf, const kf_real *x_pred, const kf_real *F) {
+    /* Re-checked here: an EKF model callback receives ctx, which may alias *kf. */
+    if (!kf_dims_ok(kf)) {
+        return KF_ERR_INVALID_INPUT;
+    }
 #ifdef KF_SPECIALIZE
 #define KF_SIZE(N, M)                                                                              \
     if (kf->n == (N)) {                                                                            \
@@ -192,6 +196,10 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
 }
 
 int kf_core_update(kf_state *kf, const kf_real *y, const kf_real *H) {
+    /* Re-checked here: an EKF model callback receives ctx, which may alias *kf. */
+    if (!kf_dims_ok(kf)) {
+        return KF_ERR_INVALID_INPUT;
+    }
 #ifdef KF_SPECIALIZE
 #define KF_SIZE(N, M)                                                                              \
     if ((kf->n == (N)) && (kf->m == (M))) {                                                        \

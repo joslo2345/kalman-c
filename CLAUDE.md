@@ -45,6 +45,12 @@ Implementation conventions:
   - Full-matrix axpy update: slower everywhere.
 - `kfi_all_finite` tests the exponent bits (all ones means NaN or Inf), reading each value through `memcpy` into an integer. An earlier version summed `v * 0`, but that built a floating-point dependency chain; replacing it made S5 about 22% faster. The bit test also stays correct under `-ffast-math`.
 - `core_update` computes `1 / diag(L)` once and multiplies by it in the triangular solves (`kfi_solve_lower_rd` and `kfi_solve_lower_t_rd`), instead of dividing for every element.
+- **Square-root filter (`src/kf_sqrt.c`, `kf_sr_*`) is UD, not QR, on purpose.**
+  - A Householder-QR array square-root filter was built first. In float32 it was *less* accurate than the Joseph form, because the 1 − 0.999… cancellation in the array update loses digits.
+  - NumPy's float32 QR silently computes in float64, so it is not a valid float32 reference.
+  - Bierman/Thornton UD forms every new variance from ratios and sums of non-negative terms. It beats the Joseph form by up to about 800× at tiny R, and `test_sqrt_accuracy` guards that.
+  - `kfi_ud_factor`: with `psd == 0` it requires only d > 0. A relative tolerance there wrongly rejected S5's P0, where a 1e-6 bias variance sits next to variances of 1. With `psd != 0`, a near-zero pivot is accepted only if its column is negligible, and it keeps tiny positive values.
+- Filter cores (`kf_core_*`, `sr_core_*`) re-check `n` and `m` themselves: model callbacks receive `ctx`, which may alias the filter state.
 - Specialized and generic builds agree to rounding, not bit-for-bit, because constant sizes change vectorization and FMA contraction. Tests use tolerances, so both pass. The EKF-vs-KF bit-identity test still holds, since both share one core.
 - `kf_linalg` outputs must not alias their inputs, except where the header says they may.
 - Unity's double assertions are enabled (`UNITY_INCLUDE_DOUBLE`). Tests compare through `(double)` with tolerances that depend on precision.

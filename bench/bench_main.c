@@ -6,6 +6,7 @@
  *
  *   S1, S2, S5  KF   time_per_step (median of 30 timed runs after a warm-up), rmse,
  *                    and max_abs_diff of each baseline from kalman-c
+ *               SRKF the same for kalman-c's square-root (UD) filter
  *   S3          EKF/UKF  rmse and nees, averaged over all trials
  *   S4          KF   steps_to_failure (equal to the scenario length if it never failed)
  *
@@ -81,7 +82,12 @@ static void bench_linear(const scenario *sc, const library *libs, int nlibs) {
         run_result res = {0};
         res.measure = 1;
         res.estimates = l == 0 ? ours : theirs;
-        if (libs[l].run(sc, &res) != RUN_OK)
+        const int rc = libs[l].run(sc, &res);
+        if (rc == RUN_FAILED) {
+            fprintf(stderr, "bench: %s %s could not run %s\n", libs[l].name, libs[l].filter,
+                    sc->id);
+        }
+        if (rc != RUN_OK)
             continue;
         if (res.steps_to_failure >= 0) {
             fprintf(stderr, "bench: %s failed on %s at step %ld; skipping\n", libs[l].name, sc->id,
@@ -145,6 +151,7 @@ int main(int argc, char **argv) {
         {KF_BENCH_NAME, KALMAN_C_VERSION, "KF", run_ours_kf},
         {"naive", "textbook", "KF", run_naive},
         {"tinyekf", TINYEKF_COMMIT, "KF", run_tinyekf},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "SRKF", run_ours_sr},
     };
     const library nonlinear_libs[] = {
         {KF_BENCH_NAME, KALMAN_C_VERSION, "EKF", run_ours_ekf},

@@ -9,6 +9,7 @@ Kalman filters for microcontrollers, in plain C99: no heap, no surprises, and nu
 - **No dynamic allocation.** All state lives in a caller-owned `kf_state`. A test checks that the library references no heap function.
 - **Numerically robust.** The Joseph-form covariance update and Cholesky solves keep P symmetric positive-definite. On an ill-conditioned problem, the textbook filter fails at its first step in `float`; kalman-c runs 1,000,000 steps.
 - **Linear KF, EKF and UKF** share one state struct and one calling pattern.
+- **Square-root (UD) KF and EKF** (`kf_sqrt.h`) for badly conditioned problems in `float`. It uses Bierman's update and Thornton's predict. With very precise sensors, it keeps small variances accurate where the Joseph form loses digits: at R = 1e-10 in `float`, its error is 2.8e-7 against the Joseph form's 1.4e-4. It costs about 1.9–2.9× more per step.
 - **Errors are returned, never silent.** NaN or Inf inputs, a singular innovation covariance, and failing model callbacks all return an error code, and leave the filter state byte-for-byte unchanged.
 - **Configurable at compile time:** `float` or `double`, the maximum sizes, and optional constant-size specializations (`KF_SPECIALIZE`) that run within 15% of TinyEKF, and faster on the 15-state problem.
 - **Diagnostics.** The normalized innovation squared (NIS) after every update. Monte Carlo tests check NIS and NEES against their chi-squared bounds.

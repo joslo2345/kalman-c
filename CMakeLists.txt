@@ -25,7 +25,7 @@ if(KF_BUILD_BENCH AND KF_MAX_STATE STREQUAL "")
 endif()
 
 add_library(kalman STATIC
-    src/kf_linalg.c src/kf_linear.c src/kf_ekf.c src/kf_ukf.c)
+    src/kf_linalg.c src/kf_linear.c src/kf_ekf.c src/kf_ukf.c src/kf_sqrt.c)
 target_include_directories(kalman PUBLIC include)
 target_compile_options(kalman PRIVATE -Wall -Wextra -Wpedantic)
 

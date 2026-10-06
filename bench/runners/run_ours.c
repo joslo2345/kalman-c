@@ -89,3 +89,43 @@ int run_ours_ukf(const scenario *sc, run_result *out) {
     RUN_LOOP(kf_ukf_predict(&kf, NULL, f_ukf, ctx) == KF_OK &&
              kf_ukf_update(&kf, z, NULL, h_ukf, ctx) == KF_OK);
 }
+
+/* ---- Square-root (UD) filter ---- */
+
+int run_ours_sr(const scenario *sc, run_result *out) {
+    kf_real P[KF_MAX_STATE * KF_MAX_STATE];
+    metrics mt;
+
+    if (sc->meas != MEAS_LINEAR) {
+        return RUN_UNSUPPORTED;
+    }
+    if (out->measure) {
+        metrics_begin(&mt, out);
+    }
+    for (int trial = 0; trial < sc->trials; ++trial) {
+        kf_sr_state sr;
+        kf_sr_init(&sr, sc->n, sc->m);
+        memcpy(sr.x, sc->x0, (size_t)sc->n * sizeof *sr.x);
+        if (kf_sr_set_P(&sr, sc->P0) != KF_OK || kf_sr_set_Q(&sr, sc->Q) != KF_OK ||
+            kf_sr_set_R(&sr, sc->R) != KF_OK) {
+            return RUN_FAILED;
+        }
+        for (int k = 0; k < sc->steps; ++k) {
+            const int ok = kf_sr_predict(&sr, sc->F) == KF_OK &&
+                           kf_sr_update(&sr, scenario_z(sc, trial, k), sc->H) == KF_OK;
+            if (out->measure) {
+                kf_sr_get_P(&sr, P);
+                if (metrics_step(&mt, sc, out, trial, k, sr.x, P, ok)) {
+                    goto done;
+                }
+            } else if (!ok) {
+                return RUN_FAILED;
+            }
+        }
+    }
+done:
+    if (out->measure) {
+        metrics_end(&mt, sc, out);
+    }
+    return RUN_OK;
+}
