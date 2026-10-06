@@ -83,3 +83,53 @@ jobs:
           done
       - name: MISRA C:2012 subset
         run: python3 scripts/check_misra.py
+
+  benchmarks:
+    # Guide Step 7: the comparison report, and a gate on speed regressions.
+    # Instruction counts (valgrind) are deterministic for a given binary and
+    # toolchain, so the runner image and compiler are pinned.
+    runs-on: ubuntu-24.04
+    env:
+      CC: gcc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install valgrind
+        run: sudo apt-get update && sudo apt-get install -y valgrind
+      - name: Tests, with the comparison [report] lines
+        run: |
+          set -o pipefail
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j 4
+          ctest --test-dir build -V --output-on-failure 2>&1 | tee ctest.log
+      - name: Build the regression probes
+        run: |
+          cmake -B build-bench -DCMAKE_BUILD_TYPE=Release -DKF_BUILD_BENCH=ON -DKF_BUILD_TESTS=OFF
+          cmake --build build-bench -j 4 --target regress
+          cmake -B build-bench-spec -DCMAKE_BUILD_TYPE=Release -DKF_BUILD_BENCH=ON -DKF_BUILD_TESTS=OFF \
+            "-DKF_SPECIALIZE=KF_SIZE(2,1)KF_SIZE(4,2)KF_SIZE(15,6)"
+          cmake --build build-bench-spec -j 4 --target regress
+      - name: Speed regression check (more than 10% slower than the last release fails)
+        id: regression
+        continue-on-error: true
+        run: >
+          python3 scripts/check_regression.py --build build-bench --build-spec build-bench-spec
+          --markdown regression.md
+      - name: Comparison report
+        if: always()
+        run: |
+          python3 scripts/make_comparison_report.py ctest.log regression.md > comparison.md
+          cat comparison.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: comparison-report
+          path: |
+            comparison.md
+            results/regression-baseline.json
+      - name: Fail on a speed regression
+        if: steps.regression.outcome == 'failure'
+        run: |
+          echo "The speed regression check failed; see comparison.md."
+          exit 1

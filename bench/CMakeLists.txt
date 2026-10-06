@@ -38,3 +38,14 @@ target_compile_options(bench PRIVATE -Wall -Wextra)
 set_source_files_properties(
     runners/tinyekf_2x1.c runners/tinyekf_4x2.c runners/tinyekf_15x6.c
     PROPERTIES COMPILE_OPTIONS "-w")
+
+# Instruction-count regression probe (see scripts/check_regression.py).
+add_executable(regress
+    regress_main.c
+    scenario.c
+    runners/metrics.c
+    runners/run_ours.c)
+target_include_directories(regress PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${KF_TESTS_DIR})
+target_link_libraries(regress PRIVATE kalman)
+target_compile_definitions(regress PRIVATE KF_BENCH_NAME="${KF_BENCH_NAME}")
+target_compile_options(regress PRIVATE -Wall -Wextra)
