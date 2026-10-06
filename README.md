@@ -388,9 +388,9 @@ CI builds with GCC and Clang, in float, double, specialized and fixed-point conf
 | Item | Description |
 |---|---|
 | **Real-board cycle counts** | DWT cycle counts on a physical Nucleo-F4. The firmware is ready; only the measurement needs hardware. |
-| **Fixed-point EKF** | Extend the integer-only filter beyond the linear KF. |
-| **Package registries** | Publish to the PlatformIO registry and the Arduino Library Manager once the repository is public. |
-| **Shared test vectors** | Move `tests/vectors/` into the shared repository the guide plans, for its C++, Python and Rust implementations. |
+| **Package registries** | Publish to the PlatformIO registry, and to the Arduino Library Manager, which expects a different repository layout. |
+| **Faster fixed point** | Cut the remaining 64-bit division (about 11% on the Cortex-M3) and integer square-root (about 6%) costs. |
+| **Shared test vectors** | Move `tests/vectors/` into a shared repository for C++, Python and Rust implementations. |
 
 ## Contributing
 

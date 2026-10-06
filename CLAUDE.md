@@ -6,17 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `kalman-c-repo-guide.md` is the design spec and build plan for this embedded-friendly Kalman filter library in C99. It is kept locally only: it is git-ignored and was removed from the public repository and its history. When it is present, treat it as the source of truth and read the relevant step before you implement anything; the "Steps" referred to below are its steps.
 
-Done so far:
+Status: **v0.3.0 is released** (2026-10-06), and the repository is public at https://github.com/joslo2345/kalman-c.
 
-- Steps 1–5: scaffolding.
-- Steps 6.1–6.4: `kf_linalg`, the linear KF, the EKF, and the UKF.
-- Step 7: baselines, scenarios, and comparison tests.
-- Step 8: the frozen S1–S5 vectors, the desktop benchmark harness, and the README table.
-- Step 8, embedded numbers: Cortex-M4F firmware run under QEMU (no physical board).
+- Every step of the guide is implemented: the KF, EKF and UKF; the UD square-root filter (6.5); the fixed-point KF and EKF (6.6); baselines and comparison tests (7); benchmarks with frozen vectors (8); CI (9); static analysis (10); docs and examples (11); releases (12).
+- CI also enforces the speed regression gate and builds the comparison report.
+- What's still missing is listed under "Next version (0.4.0)" below.
 
-Still to do: Steps 9–12, and Steps 6.5 (square-root variant) and 6.6 (fixed-point). Real-board DWT cycle counts are still missing, because QEMU can't provide them (see below).
-
-Performance (see the README table): the generic build is about 2–3× slower than TinyEKF. With `KF_SPECIALIZE` listing the sizes in use, it matches or beats TinyEKF (S2: 57 vs 63 ns; S5: 2.3 vs 2.05 µs on an M3 Pro). TinyEKF's speed comes from compile-time dimensions, and `KF_SPECIALIZE` gives us the same. The stability test shows the Joseph-form KF stays positive-definite for 1M float steps where the baselines fail, so the square-root variant is not urgent.
+Performance (see the README table):
+- **Desktop:** the generic build is about 2–3× slower than TinyEKF. With `KF_SPECIALIZE` it matches TinyEKF: faster on the 15-state S5, and 10–20% slower on the 2-state S1, depending on the run.
+- **Embedded:** the specialized float build runs the fewest instructions on the Cortex-M4F. Fixed point is 2.1× cheaper than software float on the FPU-less Cortex-M3.
+- **Measurement:** desktop timings need a quiet machine. Check `sysctl -n vm.loadavg` before trusting a run; one run at load 18.9 was 2× off.
 
 The KF and EKF share one covariance implementation. `src/kf_internal.h` declares `kf_core_predict`, which takes a predicted x and F, and `kf_core_update`, which takes an innovation y and H. The public KF and EKF functions only compute those inputs and delegate. As a result, an EKF with linear callbacks is bit-identical to the KF, and `test_ekf` asserts this. EKF callbacks return the model value and its Jacobian together, take a `void *ctx`, and turn a non-zero return into `KF_ERR_MODEL_FAILED`.
 
@@ -70,6 +69,28 @@ Implementation conventions:
 - Specialized and generic builds agree to rounding, not bit-for-bit, because constant sizes change vectorization and FMA contraction. Tests use tolerances, so both pass. The EKF-vs-KF bit-identity test still holds, since both share one core.
 - `kf_linalg` outputs must not alias their inputs, except where the header says they may.
 - Unity's double assertions are enabled (`UNITY_INCLUDE_DOUBLE`). Tests compare through `(double)` with tolerances that depend on precision.
+
+## Next version (0.4.0): planned work
+
+These were agreed with the user after v0.3.0. Pick them up in this order unless told otherwise, and ask before anything that needs the user's accounts or hardware.
+
+1. **Real-board cycle counts.** This needs a physical Nucleo-F4 (Cortex-M4F); ask whether one is available.
+   - The firmware in `embedded/` is ready. Add a variant that reads the DWT cycle counter (`DWT->CYCCNT`) and prints over UART or semihosting, plus flashing steps (st-flash, openocd or probe-rs).
+   - Record the guide's `cycles_per_step` metric, and replace the "instructions, not cycles" caveat in the README.
+2. **Package registries.** These need the user's accounts, so confirm first.
+   - **PlatformIO:** `library.json` is ready; publish with `pio pkg publish`.
+   - **Arduino Library Manager:** it requires `library.properties` and `src/` at a repository root, which our `include/` layout doesn't have. The likely route is a separate mirror repository generated from `scripts/amalgamate.py --arduino`. Discuss with the user before creating it.
+3. **Fixed-point speed**, measured on the M3 with `scripts/profile_firmware.py`:
+   - 64-bit division in `div_wide` (`__udivmoddi4`, about 11%). The idea is a reciprocal of each Cholesky diagonal plus a one-step remainder correction, which keeps rounding identical; check it with a randomized test against `div_wide`.
+   - `isqrt64` (about 6%): start from the highest set bit, or use Newton steps.
+   - Stack is 592 B, up from 544 because the core is now a separate frame.
+   - Keep the x86-64 regression case in mind: guard bits already cost +8.7% there.
+4. **Small-problem overhead.** The specialized S1 is 10–20% behind TinyEKF; the cost is per-step validation and copy-on-success. Look for savings that keep the "state unchanged on error" guarantee.
+5. **A specialized UKF.** It doesn't use `KF_SPECIALIZE` yet.
+6. **The guide's longer-term plan:** move `tests/vectors/` into a shared test-vectors repository, for C++, Python and Rust implementations.
+7. **GitHub settings the user hasn't decided yet,** as of v0.3.0: secret scanning plus push protection, Dependabot (version updates would keep the SHA-pinned actions current), and branch protection on `main`. Branch protection would mean working through pull requests instead of pushing to `main`.
+
+At each release: re-record the regression baseline on CI from the released code, using a throwaway branch without `results/regression-baseline.json`, then commit the artifact. Also re-run the benchmarks on a quiet machine.
 
 ## Versioning and releases
 
