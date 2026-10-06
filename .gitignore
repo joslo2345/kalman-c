@@ -24,3 +24,6 @@ __pycache__/
 
 # Local design notes, not published
 kalman-c-repo-guide.md
+
+# Claude Code session lock (local)
+.claude/scheduled_tasks.lock
