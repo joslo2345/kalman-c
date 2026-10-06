@@ -1,0 +1,3 @@
+[submodule "tests/baselines/tinyekf"]
+	path = tests/baselines/tinyekf
+	url = https://github.com/simondlevy/TinyEKF.git

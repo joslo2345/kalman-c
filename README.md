@@ -2,7 +2,7 @@
 
 An embedded-friendly Kalman filter library in C99.
 
-> **Status:** early scaffolding. The build, configuration, and test setup are in place. The filters themselves aren't implemented yet. See `kalman-c-repo-guide.md` for the full plan.
+> **Status:** in development. The linear KF, EKF and UKF are implemented and tested against TinyEKF and a textbook filter. Benchmarks, the square-root variant and fixed-point support are still to come. See `kalman-c-repo-guide.md` for the full plan.
 
 ## Goals
 
@@ -13,6 +13,8 @@ An embedded-friendly Kalman filter library in C99.
 - **Diagnostics.** NIS/NEES for checking filter consistency.
 
 ## Build and test
+
+The tests compare against [TinyEKF](https://github.com/simondlevy/TinyEKF), included as a git submodule. Clone with `--recursive`, or run `git submodule update --init` after cloning.
 
 ```bash
 cmake -B build                  # add -DKF_USE_DOUBLE=ON for double precision
