@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/joslo2345/kalman-c/actions/workflows/ci.yml"><img src="https://github.com/joslo2345/kalman-c/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.2.0"><img src="https://img.shields.io/badge/release-v0.2.0-2a78d6" alt="Release v0.2.0" /></a>
+  <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.3.0"><img src="https://img.shields.io/badge/release-v0.3.0-2a78d6" alt="Release v0.3.0" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="MIT License" /></a>
   <img src="https://img.shields.io/badge/C-C99-555555" alt="C99" />
   <a href="./scripts/check_misra.py"><img src="https://img.shields.io/badge/MISRA_C:2012-subset_enforced-6f42c1" alt="MISRA C:2012 subset enforced" /></a>
@@ -58,6 +58,21 @@ kalman-c is a Kalman filter library for microcontrollers and anything else that 
 ## News
 
 <table>
+  <tr>
+    <td align="right" valign="top" width="110">
+      <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.3.0">
+        <img src="https://img.shields.io/badge/v0.3.0-2026.10.06-6f42c1?style=flat-square" alt="v0.3.0" />
+      </a>
+    </td>
+    <td valign="top">
+      <strong>Fixed-point EKF, and a faster fixed-point filter</strong><br/>
+      <b>Fixed-point EKF</b>: integer-only, sharing the fixed-point KF's core. It tracks the float EKF to 0.49 mm over 300 range-bearing steps.<br/>
+      <b>About 10% faster on Cortex-M</b>: 12,576 instructions per step on a Cortex-M3 without an FPU, 2.1× fewer than float on software floating point. Found with the new firmware profiler.<br/>
+      <a href="./CHANGELOG.md#030---2026-10-06">Changelog →</a> ·
+      <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.3.0">Download →</a> ·
+      <a href="./scripts/profile_firmware.py">Profiler →</a>
+    </td>
+  </tr>
   <tr>
     <td align="right" valign="top" width="110">
       <a href="https://github.com/joslo2345/kalman-c/releases/tag/v0.2.0">

@@ -7,6 +7,10 @@ change the API.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-06
+
+A fixed-point EKF, and a fixed-point filter that is about 10% faster on Cortex-M.
+
 ### Added
 
 - A fixed-point EKF (`kf_fx_ekf_predict`, `kf_fx_ekf_update`) with Q-format model callbacks.
@@ -69,6 +73,7 @@ First release.
 - The frozen benchmark scenarios S1–S5, with desktop and emulated Cortex-M4F benchmarks against TinyEKF and a textbook filter.
 - Static analysis: clang-tidy, cppcheck, and an enforced subset of MISRA C:2012.
 
-[Unreleased]: https://github.com/joslo2345/kalman-c/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/joslo2345/kalman-c/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/joslo2345/kalman-c/releases/tag/v0.3.0
 [0.2.0]: https://github.com/joslo2345/kalman-c/releases/tag/v0.2.0
 [0.1.0]: https://github.com/joslo2345/kalman-c/releases/tag/v0.1.0
