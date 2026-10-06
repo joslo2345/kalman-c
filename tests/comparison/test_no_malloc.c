@@ -1,6 +1,6 @@
-#include "unity.h"
 #include "kalman/kalman.h"
 #include "scenarios/constant_velocity.h"
+#include "unity.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -8,9 +8,23 @@
 /* Linked with -Wl,--wrap=malloc,... so every allocation in this binary is counted. */
 static int alloc_count = 0;
 
-void *__wrap_malloc(size_t n)           { (void)n; alloc_count++; return NULL; }
-void *__wrap_calloc(size_t a, size_t b) { (void)a; (void)b; alloc_count++; return NULL; }
-void *__wrap_realloc(void *p, size_t n) { (void)p; (void)n; alloc_count++; return NULL; }
+void *__wrap_malloc(size_t n) {
+    (void)n;
+    alloc_count++;
+    return NULL;
+}
+void *__wrap_calloc(size_t a, size_t b) {
+    (void)a;
+    (void)b;
+    alloc_count++;
+    return NULL;
+}
+void *__wrap_realloc(void *p, size_t n) {
+    (void)p;
+    (void)n;
+    alloc_count++;
+    return NULL;
+}
 
 static cv_scenario sc;
 

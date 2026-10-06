@@ -18,7 +18,7 @@ typedef float kf_real;
 #endif
 
 /* C99 restrict, spelled so the public headers also compile as C++. */
-#if defined(__cplusplus)
+#ifdef __cplusplus
 #define KF_RESTRICT __restrict
 #else
 #define KF_RESTRICT restrict

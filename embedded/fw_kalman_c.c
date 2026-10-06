@@ -15,7 +15,8 @@ void filter_init(void) {
 }
 
 int filter_step(const float *z) {
-    if (kf_predict(&kf, s2_F) != KF_OK) return 1;
+    if (kf_predict(&kf, s2_F) != KF_OK)
+        return 1;
     return kf_update(&kf, z, s2_H) != KF_OK;
 }
 

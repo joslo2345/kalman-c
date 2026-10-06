@@ -12,8 +12,8 @@ typedef struct {
 } rng;
 
 void rng_seed(rng *r, uint64_t seed);
-double rng_uniform(rng *r);  /* in (0, 1) */
-double rng_gauss(rng *r);    /* standard normal */
+double rng_uniform(rng *r); /* in (0, 1) */
+double rng_gauss(rng *r);   /* standard normal */
 
 /* x (n) = L * N(0, I) for lower-triangular L (n x n, row-major, double) */
 void rng_gauss_vec(rng *r, double *x, const double *L, int n);

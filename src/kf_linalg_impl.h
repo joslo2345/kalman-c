@@ -33,10 +33,10 @@
  */
 
 KFI_INLINE void kfi_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
-                const kf_real *KF_RESTRICT B, int r, int k, int c) {
+                            const kf_real *KF_RESTRICT B, int r, int k, int c) {
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
-            kf_real sum = 0;
+            kf_real sum = (kf_real)0;
             for (int p = 0; p < k; ++p) {
                 sum += A[i * k + p] * B[p * c + j];
             }
@@ -46,12 +46,12 @@ KFI_INLINE void kfi_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A
 }
 
 KFI_INLINE void kfi_mat_mul_abt(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
-                    const kf_real *KF_RESTRICT B, int r, int k, int c) {
+                                const kf_real *KF_RESTRICT B, int r, int k, int c) {
     for (int i = 0; i < r; ++i) {
         const kf_real *a = &A[i * k];
         for (int j = 0; j < c; ++j) {
             const kf_real *b = &B[j * k];
-            kf_real sum = 0;
+            kf_real sum = (kf_real)0;
             for (int p = 0; p < k; ++p) {
                 sum += a[p] * b[p];
             }
@@ -61,7 +61,7 @@ KFI_INLINE void kfi_mat_mul_abt(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRI
 }
 
 KFI_INLINE void kfi_mat_mul_atb(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
-                    const kf_real *KF_RESTRICT B, int r, int k, int c) {
+                                const kf_real *KF_RESTRICT B, int r, int k, int c) {
     for (int i = 0; i < r * c; ++i) {
         C[i] = 0;
     }
@@ -78,7 +78,8 @@ KFI_INLINE void kfi_mat_mul_atb(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRI
     }
 }
 
-KFI_INLINE void kfi_mat_transpose(kf_real *KF_RESTRICT At, const kf_real *KF_RESTRICT A, int r, int c) {
+KFI_INLINE void kfi_mat_transpose(kf_real *KF_RESTRICT At, const kf_real *KF_RESTRICT A, int r,
+                                  int c) {
     for (int i = 0; i < r; ++i) {
         for (int j = 0; j < c; ++j) {
             At[j * r + i] = A[i * c + j];
@@ -122,7 +123,7 @@ KFI_INLINE int kfi_cholesky(kf_real *L, const kf_real *A, int n) {
         for (int p = 0; p < j; ++p) {
             d -= L[j * n + p] * L[j * n + p];
         }
-        if (!(d > 0) || !isfinite(d)) { /* also catches NaN */
+        if (!(d > (kf_real)0) || !isfinite(d)) { /* also catches NaN */
             return KF_ERR_NOT_POSITIVE_DEFINITE;
         }
         kf_real ljj = KF_SQRT(d);
@@ -216,26 +217,32 @@ KFI_INLINE int kfi_cholesky_ok(const kf_real *A, int n) {
     if (n < 1 || n > KF_MAX_DIM) {
         return 0;
     }
-    return kfi_cholesky(L, A, n) == KF_OK;
+    return kfi_cholesky(L, A, n) == (int)KF_OK;
 }
 
-/* A value is NaN or Inf exactly when its exponent bits are all ones. Testing
- * the bits uses independent integer operations, so there is no floating-point
- * dependency chain, and it stays correct under -ffast-math. */
+/* A value is NaN or Inf exactly when its exponent bits are all ones, that is
+ * when exp_mask & ~bits is zero. Tracking the minimum of that over the input
+ * uses independent integer operations (no floating-point dependency chain) and
+ * stays correct under -ffast-math.
+ * MISRA C:2012 Rule 21.15 deviation: memcpy between kf_real and an unsigned
+ * integer of the same size is the defined way to read the bit pattern. */
 KFI_INLINE int kfi_all_finite(const kf_real *v, int len) {
 #ifdef KF_USE_DOUBLE
-    const uint64_t exp_mask = 0x7FF0000000000000ull;
+    const uint64_t exp_mask = 0x7FF0000000000000ULL;
     uint64_t bits;
+    uint64_t min_missing = exp_mask;
 #else
-    const uint32_t exp_mask = 0x7F800000u;
+    const uint32_t exp_mask = 0x7F800000U;
     uint32_t bits;
+    uint32_t min_missing = exp_mask;
 #endif
-    int bad = 0;
     for (int i = 0; i < len; ++i) {
-        memcpy(&bits, &v[i], sizeof bits);
-        bad |= (bits & exp_mask) == exp_mask;
+        (void)memcpy(&bits, &v[i], sizeof bits); /* misra-c2012-21.15 deviation */
+        if ((exp_mask & ~bits) < min_missing) {
+            min_missing = exp_mask & ~bits;
+        }
     }
-    return !bad;
+    return min_missing != 0U;
 }
 
 #endif

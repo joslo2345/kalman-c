@@ -16,7 +16,7 @@ static qemu_plugin_u64 insns;
 static void tb_trans(struct qemu_plugin_tb *tb, void *userdata) {
     (void)userdata;
     qemu_plugin_register_vcpu_tb_exec_inline_per_vcpu(tb, QEMU_PLUGIN_INLINE_ADD_U64, insns,
-                                                       qemu_plugin_tb_n_insns(tb));
+                                                      qemu_plugin_tb_n_insns(tb));
 }
 
 static void at_exit(void *userdata) {

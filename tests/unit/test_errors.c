@@ -1,5 +1,5 @@
-#include "unity.h"
 #include "kalman/kalman.h"
+#include "unity.h"
 
 #include <math.h>
 #include <string.h>
@@ -78,6 +78,42 @@ void test_null_arguments_are_rejected(void) {
     TEST_ASSERT_EQUAL_INT(KF_ERR_INVALID_INPUT, kf_update(&kf, z, NULL));
 }
 
+static int identity_f(kf_real *x_out, kf_real *F_out, const kf_real *x, int n, void *ctx) {
+    (void)ctx;
+    for (int i = 0; i < n; ++i)
+        x_out[i] = x[i];
+    kf_mat_identity(F_out, n);
+    return 0;
+}
+
+static int identity_ukf_f(kf_real *x_out, const kf_real *x, int n, void *ctx) {
+    (void)ctx;
+    for (int i = 0; i < n; ++i)
+        x_out[i] = x[i];
+    return 0;
+}
+
+void test_corrupted_dimensions_are_rejected_and_state_unchanged(void) {
+    const int bad_dims[4][2] = {{0, 1}, {KF_MAX_STATE + 1, 1}, {2, 0}, {2, KF_MAX_MEAS + 1}};
+    kf_real F[KF_MAX_STATE * KF_MAX_STATE] = {0};
+    kf_real H[KF_MAX_MEAS * KF_MAX_STATE] = {0};
+    kf_real z[KF_MAX_MEAS] = {0};
+
+    for (int i = 0; i < 4; ++i) {
+        kf_state kf;
+        cv_setup_default(&kf);
+        kf.n = bad_dims[i][0];
+        kf.m = bad_dims[i][1];
+        kf_state before = kf;
+        TEST_ASSERT_EQUAL_INT(KF_ERR_INVALID_INPUT, kf_predict(&kf, F));
+        TEST_ASSERT_EQUAL_INT(KF_ERR_INVALID_INPUT, kf_update(&kf, z, H));
+        TEST_ASSERT_EQUAL_INT(KF_ERR_INVALID_INPUT, kf_ekf_predict(&kf, identity_f, NULL));
+        TEST_ASSERT_EQUAL_INT(KF_ERR_INVALID_INPUT,
+                              kf_ukf_predict(&kf, NULL, identity_ukf_f, NULL));
+        TEST_ASSERT_EQUAL_MEMORY(&before, &kf, sizeof kf);
+    }
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_init_accepts_valid_dimensions);
@@ -87,5 +123,6 @@ int main(void) {
     RUN_TEST(test_inf_in_transition_matrix_is_rejected_and_state_unchanged);
     RUN_TEST(test_singular_innovation_covariance_returns_error_and_state_unchanged);
     RUN_TEST(test_null_arguments_are_rejected);
+    RUN_TEST(test_corrupted_dimensions_are_rejected_and_state_unchanged);
     return UNITY_END();
 }

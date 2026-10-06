@@ -35,6 +35,7 @@ Deviations from the guide:
 
 Implementation conventions:
 
+- Every public filter entry point checks `kf_dims_ok(kf)` (in `src/kf_internal.h`) before indexing. `kf->n` and `kf->m` are plain fields a caller can overwrite after `kf_init`, and every scratch buffer is sized by `KF_MAX_*`. Without the check, clang-tidy's analyzer reports stack buffer overruns. New entry points must call it too.
 - Filter functions compute into local stack buffers and copy into `*kf` only after the whole step has succeeded. That is how "state unchanged on error" is guaranteed. Keep this pattern in new filters.
 - Never invert S explicitly. Factor it with `kf_cholesky`, then use `kf_cholesky_solve` and `kf_solve_lower`.
 - The matrix kernels live in `src/kf_linalg_impl.h` as `KFI_INLINE` (always-inline) `kfi_*` functions. Filter sources call those. `kf_linalg.c` holds only the public `kf_*` wrappers. Inlining is what lets `KF_SPECIALIZE` propagate constant sizes, so don't call the public wrappers from filter code.
@@ -96,6 +97,24 @@ python3 scripts/update_readme_table.py results/results.csv kalman-c
 - `KF_BUILD_BENCH` raises `KF_MAX_STATE` to 15 for S5. The `KF_MAX_STATE` and `KF_MAX_MEAS` cache variables override the defaults in any build.
 - For the specialized column, configure a second bench build with `'-DKF_SPECIALIZE=KF_SIZE(2,1)KF_SIZE(4,2)KF_SIZE(15,6)'`. It reports as `kalman-c-specialized`. Always pass `KF_SPECIALIZE` as a cache variable: in `CMAKE_C_FLAGS`, the Makefile shell silently drops it.
 - Commit the code before running the benchmark, so the recorded commit hash matches the code that produced the numbers.
+
+Static analysis. CI runs all of this, in the `static-analysis` job:
+
+```bash
+clang-format --dry-run --Werror <files>          # pinned: clang-format 23.1.2 (PyPI wheel)
+clang-tidy --quiet src/*.c -- -std=c99 -Iinclude -Isrc [-DKF_USE_DOUBLE | "-DKF_SPECIALIZE=KF_SIZE(4,2)"]   # pinned: 22.1.8
+cppcheck --std=c99 --enable=warning,style,performance,portability --inline-suppr --error-exitcode=1 \
+  --suppress=missingIncludeSystem -Iinclude -Isrc -UKF_SPECIALIZE src/
+python3 scripts/check_misra.py                    # enforced MISRA C:2012 subset
+```
+
+- `.clang-tidy` lists each disabled check with the reason. All enabled checks are errors.
+- cppcheck's four `uninitvar` hits in `kf_linear.c` are false positives (arrays filled by run-time-bounded loops). They are suppressed inline, with the reason. Zero-initialising instead would add a `memset` to every step.
+- MISRA:
+  - Homebrew's `cppcheck --addon=misra` fails silently. `check_misra.py` therefore runs `misra.py` directly on dump files, in a temp copy of `src/`.
+  - Everything is enforced except Advisory 12.1, 15.5 and 20.5.
+  - Rule 21.15 has one documented deviation: the `memcpy` bit-read in `kfi_all_finite`, marked `misra-c2012-21.15 deviation`.
+  - On a Mac, clang-tidy needs `-isysroot $SDKROOT`.
 
 Embedded benchmark (STM32F405 / Cortex-M4F, emulated):
 

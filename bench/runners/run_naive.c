@@ -1,12 +1,14 @@
-#include "runners.h"
 #include "baselines/naive_kf.h"
+#include "runners.h"
 
 #include <string.h>
 
 int run_naive(const scenario *sc, run_result *out) {
     metrics mt;
-    if (sc->meas != MEAS_LINEAR) return RUN_UNSUPPORTED;
-    if (out->measure) metrics_begin(&mt, out);
+    if (sc->meas != MEAS_LINEAR)
+        return RUN_UNSUPPORTED;
+    if (out->measure)
+        metrics_begin(&mt, out);
 
     for (int trial = 0; trial < sc->trials; ++trial) {
         naive_kf kf;
@@ -23,13 +25,15 @@ int run_naive(const scenario *sc, run_result *out) {
         for (int k = 0; k < sc->steps; ++k) {
             const int ok = naive_kf_step(&kf, scenario_z(sc, trial, k)) == 0;
             if (out->measure) {
-                if (metrics_step(&mt, sc, out, trial, k, kf.x, kf.P, ok)) goto done;
+                if (metrics_step(&mt, sc, out, trial, k, kf.x, kf.P, ok))
+                    goto done;
             } else if (!ok) {
                 return RUN_FAILED;
             }
         }
     }
 done:
-    if (out->measure) metrics_end(&mt, sc, out);
+    if (out->measure)
+        metrics_end(&mt, sc, out);
     return RUN_OK;
 }

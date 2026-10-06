@@ -1,5 +1,5 @@
-#include "unity.h"
 #include "kalman/kalman.h"
+#include "unity.h"
 
 #include <math.h>
 #include <string.h>
@@ -45,7 +45,8 @@ void test_ukf_with_linear_model_matches_linear_kf(void) {
 
     kf_init(&kf, 4, 2);
     kf_mat_identity(kf.P, 4);
-    for (int i = 0; i < 4; ++i) kf.Q[i * 4 + i] = (kf_real)1e-3;
+    for (int i = 0; i < 4; ++i)
+        kf.Q[i * 4 + i] = (kf_real)1e-3;
     kf.R[0] = kf.R[3] = (kf_real)0.25;
     ukf = kf;
 
@@ -161,7 +162,8 @@ void test_range_bearing_tracking_converges(void) {
     kf.x[1] = 6;
     kf_mat_identity(kf.P, 4);
     kf.P[0] = kf.P[5] = 4;
-    for (int i = 0; i < 4; ++i) kf.Q[i * 4 + i] = (kf_real)1e-4;
+    for (int i = 0; i < 4; ++i)
+        kf.Q[i * 4 + i] = (kf_real)1e-4;
     kf.R[0] = (kf_real)0.01;
     kf.R[3] = (kf_real)1e-4;
 
@@ -184,17 +186,27 @@ void test_range_bearing_tracking_converges(void) {
 /* ---- Errors ---- */
 
 static int failing_f(kf_real *x_out, const kf_real *x, int n, void *ctx) {
-    (void)x_out; (void)x; (void)n; (void)ctx;
+    (void)x_out;
+    (void)x;
+    (void)n;
+    (void)ctx;
     return 1;
 }
 
 static int failing_h(kf_real *z_out, const kf_real *x, int n, int m, void *ctx) {
-    (void)z_out; (void)x; (void)n; (void)m; (void)ctx;
+    (void)z_out;
+    (void)x;
+    (void)n;
+    (void)m;
+    (void)ctx;
     return 1;
 }
 
 static int nan_h(kf_real *z_out, const kf_real *x, int n, int m, void *ctx) {
-    (void)x; (void)n; (void)m; (void)ctx;
+    (void)x;
+    (void)n;
+    (void)m;
+    (void)ctx;
     z_out[0] = NAN;
     return 0;
 }

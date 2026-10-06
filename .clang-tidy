@@ -1,0 +1,31 @@
+# Static analysis for the library sources (src/, include/kalman/).
+# Run: clang-tidy src/*.c -- -std=c99 -Iinclude -Isrc
+#
+# Disabled checks and why:
+#   readability-identifier-length          n, m, P, F, H, K, x are the standard Kalman symbols
+#   readability-math-missing-parentheses   style only; MISRA 12.1 (advisory) covers the same ground
+#   readability-magic-numbers              the only hits are the 0.5 in averaging A and A^T
+#   readability-redundant-casting          (int)KF_OK is required by MISRA C:2012 Rule 10.4
+#   bugprone-easily-swappable-parameters   inherent to a matrix API (rows, inner, cols)
+#   bugprone-implicit-widening-of-multiplication-result
+#                                          indices are bounded by KF_MAX_DIM, so int products
+#                                          cannot overflow
+#   misc-include-cleaner                   reports kf_real as unused through the umbrella header
+Checks: >
+  -*,
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  misc-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -readability-identifier-length,
+  -readability-math-missing-parentheses,
+  -readability-magic-numbers,
+  -readability-redundant-casting,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -misc-include-cleaner
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(include/kalman|src)/.*\.h$'

@@ -1,5 +1,5 @@
-#include "unity.h"
 #include "kalman/kalman.h"
+#include "unity.h"
 
 #include <float.h>
 #include <math.h>
@@ -71,7 +71,8 @@ void test_cholesky_known_factor(void) {
 
 void test_cholesky_in_place(void) {
     kf_real A[9];
-    for (int i = 0; i < 9; ++i) A[i] = A3[i];
+    for (int i = 0; i < 9; ++i)
+        A[i] = A3[i];
     TEST_ASSERT_EQUAL_INT(KF_OK, kf_cholesky(A, A, 3));
     assert_all_within(L3, A, 9);
 }

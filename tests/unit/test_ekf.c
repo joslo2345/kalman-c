@@ -1,5 +1,5 @@
-#include "unity.h"
 #include "kalman/kalman.h"
+#include "unity.h"
 
 #include <math.h>
 #include <string.h>
@@ -47,13 +47,15 @@ void test_ekf_with_linear_model_matches_linear_kf_exactly(void) {
 
     kf_init(&kf, 4, 2);
     kf_mat_identity(kf.P, 4);
-    for (int i = 0; i < 4; ++i) kf.Q[i * 4 + i] = (kf_real)1e-3;
+    for (int i = 0; i < 4; ++i)
+        kf.Q[i * 4 + i] = (kf_real)1e-3;
     kf.R[0] = kf.R[3] = (kf_real)0.25;
     ekf = kf;
 
     for (int k = 0; k < 1000; ++k) {
         const kf_real t = dt * (kf_real)k;
-        const kf_real z[2] = {t + (kf_real)0.3 * (kf_real)sin(k), 2 * t - (kf_real)0.2 * (kf_real)cos(k)};
+        const kf_real z[2] = {t + (kf_real)0.3 * (kf_real)sin(k),
+                              2 * t - (kf_real)0.2 * (kf_real)cos(k)};
         TEST_ASSERT_EQUAL_INT(KF_OK, kf_predict(&kf, F));
         TEST_ASSERT_EQUAL_INT(KF_OK, kf_update(&kf, z, H));
         TEST_ASSERT_EQUAL_INT(KF_OK, kf_ekf_predict(&ekf, linear_f, &ctx));
@@ -174,11 +176,12 @@ void test_range_bearing_tracking_converges(void) {
     kf_real dt = (kf_real)0.1;
     kf_state kf;
     kf_init(&kf, 4, 2);
-    kf.x[0] = 9;  /* truth starts at (10, 5) moving at (1, -0.5) */
+    kf.x[0] = 9; /* truth starts at (10, 5) moving at (1, -0.5) */
     kf.x[1] = 6;
     kf_mat_identity(kf.P, 4);
     kf.P[0] = kf.P[5] = 4;
-    for (int i = 0; i < 4; ++i) kf.Q[i * 4 + i] = (kf_real)1e-4;
+    for (int i = 0; i < 4; ++i)
+        kf.Q[i * 4 + i] = (kf_real)1e-4;
     kf.R[0] = (kf_real)0.01;
     kf.R[3] = (kf_real)1e-4;
 
@@ -201,12 +204,17 @@ void test_range_bearing_tracking_converges(void) {
 /* ---- Errors ---- */
 
 static int failing_f(kf_real *x_out, kf_real *F_out, const kf_real *x, int n, void *ctx) {
-    (void)x_out; (void)F_out; (void)x; (void)n; (void)ctx;
+    (void)x_out;
+    (void)F_out;
+    (void)x;
+    (void)n;
+    (void)ctx;
     return 1;
 }
 
 static int nan_f(kf_real *x_out, kf_real *F_out, const kf_real *x, int n, void *ctx) {
-    (void)x; (void)ctx;
+    (void)x;
+    (void)ctx;
     kf_mat_identity(F_out, n);
     x_out[0] = NAN;
     return 0;

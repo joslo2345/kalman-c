@@ -18,8 +18,10 @@ int TINYEKF_RUN(const scenario *sc, run_result *out) {
     const kf_real *H = sc->meas == MEAS_LINEAR ? sc->H : Hrb;
     metrics mt;
 
-    if (sc->n != EKF_N || sc->m != EKF_M) return RUN_UNSUPPORTED;
-    if (out->measure) metrics_begin(&mt, out);
+    if (sc->n != EKF_N || sc->m != EKF_M)
+        return RUN_UNSUPPORTED;
+    if (out->measure)
+        metrics_begin(&mt, out);
 
     for (int trial = 0; trial < sc->trials; ++trial) {
         memcpy(e.x, sc->x0, sizeof e.x);
@@ -35,13 +37,15 @@ int TINYEKF_RUN(const scenario *sc, run_result *out) {
             }
             const int ok = ekf_update(&e, scenario_z(sc, trial, k), hx, H, sc->R);
             if (out->measure) {
-                if (metrics_step(&mt, sc, out, trial, k, e.x, e.P, ok)) goto done;
+                if (metrics_step(&mt, sc, out, trial, k, e.x, e.P, ok))
+                    goto done;
             } else if (!ok) {
                 return RUN_FAILED;
             }
         }
     }
 done:
-    if (out->measure) metrics_end(&mt, sc, out);
+    if (out->measure)
+        metrics_end(&mt, sc, out);
     return RUN_OK;
 }

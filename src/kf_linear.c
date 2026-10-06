@@ -1,6 +1,6 @@
 #include "kalman/kf_linear.h"
-#include "kf_linalg_impl.h"
 #include "kf_internal.h"
+#include "kf_linalg_impl.h"
 
 #include <string.h>
 
@@ -19,7 +19,7 @@ int kf_init(kf_state *kf, int n, int m) {
     if (kf == NULL || n < 1 || n > KF_MAX_STATE || m < 1 || m > KF_MAX_MEAS) {
         return KF_ERR_INVALID_INPUT;
     }
-    memset(kf, 0, sizeof *kf);
+    (void)memset(kf, 0, sizeof *kf);
     kf->n = n;
     kf->m = m;
     return KF_OK;
@@ -41,7 +41,7 @@ KF_ALWAYS_INLINE int core_predict(kf_state *kf, const kf_real *x_pred, const kf_
         const kf_real *fp = &FP[i * n];
         for (int j = i; j < n; ++j) {
             const kf_real *f = &F[j * n];
-            kf_real s = 0;
+            kf_real s = (kf_real)0;
             for (int k = 0; k < n; ++k) {
                 s += fp[k] * f[k];
             }
@@ -51,18 +51,21 @@ KF_ALWAYS_INLINE int core_predict(kf_state *kf, const kf_real *x_pred, const kf_
         }
     }
 
+    /* cppcheck-suppress uninitvar ; P is filled above for every index used */
     if (!kfi_all_finite(P, n * n)) {
         return KF_ERR_INVALID_INPUT;
     }
-    memcpy(kf->x, x_pred, (size_t)n * sizeof *x_pred);
-    memcpy(kf->P, P, (size_t)(n * n) * sizeof *P);
+    (void)memcpy(kf->x, x_pred, (size_t)n * sizeof *x_pred);
+    (void)memcpy(kf->P, P, (size_t)n * (size_t)n * sizeof *P);
     return KF_OK;
 }
 
 int kf_core_predict(kf_state *kf, const kf_real *x_pred, const kf_real *F) {
 #ifdef KF_SPECIALIZE
 #define KF_SIZE(N, M)                                                                              \
-    if (kf->n == (N)) return core_predict(kf, x_pred, F, N);
+    if (kf->n == (N)) {                                                                            \
+        return core_predict(kf, x_pred, F, N);                                                     \
+    }
     KF_SPECIALIZE
 #undef KF_SIZE
 #endif
@@ -73,7 +76,7 @@ int kf_core_predict(kf_state *kf, const kf_real *x_pred, const kf_real *F) {
 int kf_predict(kf_state *kf, const kf_real *F) {
     kf_real x[KF_MAX_STATE];
 
-    if (kf == NULL || F == NULL) {
+    if (kf == NULL || F == NULL || !kf_dims_ok(kf)) {
         return KF_ERR_INVALID_INPUT;
     }
     kfi_mat_mul(x, F, kf->x, kf->n, kf->n, 1);
@@ -99,14 +102,14 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
     kf_real HP[KF_MAX_MEAS * KF_MAX_STATE]; /* H P = (P H^T)^T, as P is symmetric */
     kf_real S[KF_MAX_MEAS * KF_MAX_MEAS];
     kf_real L[KF_MAX_MEAS * KF_MAX_MEAS];
-    kf_real rd[KF_MAX_MEAS]; /* 1 / diag(L) */
+    kf_real rd[KF_MAX_MEAS];                 /* 1 / diag(L) */
     kf_real Kt[KF_MAX_MEAS * KF_MAX_STATE];  /* K^T, m x n */
     kf_real RKt[KF_MAX_MEAS * KF_MAX_STATE]; /* R K^T, m x n */
     kf_real B[KF_MAX_STATE * KF_MAX_STATE];
     kf_real BHt[KF_MAX_STATE * KF_MAX_MEAS];
     kf_real P[KF_MAX_STATE * KF_MAX_STATE];
     kf_real x[KF_MAX_STATE];
-    kf_real nis = 0;
+    kf_real nis = (kf_real)0;
     int status;
 
     if (!kfi_all_finite(y, m) || !kfi_all_finite(H, m * n)) {
@@ -120,7 +123,7 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
     kfi_mat_symmetrize(S, m);
 
     status = kfi_cholesky(L, S, m);
-    if (status != KF_OK) {
+    if (status != (int)KF_OK) {
         return status;
     }
 
@@ -128,6 +131,7 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
     for (int i = 0; i < m; ++i) {
         rd[i] = (kf_real)1 / L[i * m + i];
     }
+    /* cppcheck-suppress uninitvar ; rd is filled above for every index used */
     kfi_solve_lower_rd(Kt, L, rd, HP, m, n);
     kfi_solve_lower_t_rd(Kt, L, rd, Kt, m, n);
 
@@ -149,7 +153,7 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
     /* B = P - K (H P) */
     for (int i = 0; i < n; ++i) {
         for (int c = 0; c < n; ++c) {
-            kf_real s = 0;
+            kf_real s = (kf_real)0;
             for (int j = 0; j < m; ++j) {
                 s += Kt[j * n + i] * HP[j * n + c];
             }
@@ -158,11 +162,14 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
     }
 
     /* P = (B - (B H^T) K^T) + K R K^T, upper triangle mirrored */
+    /* cppcheck-suppress uninitvar ; B is filled above for every index used */
     kfi_mat_mul_abt(BHt, B, H, n, n, m);
     kfi_mat_mul(RKt, kf->R, Kt, m, m, n);
     for (int i = 0; i < n; ++i) {
         for (int c = i; c < n; ++c) {
-            kf_real apa_upper = B[i * n + c], apa_lower = B[c * n + i], krk = 0;
+            kf_real apa_upper = B[i * n + c];
+            kf_real apa_lower = B[c * n + i];
+            kf_real krk = (kf_real)0;
             for (int j = 0; j < m; ++j) {
                 apa_upper -= BHt[i * m + j] * Kt[j * n + c];
                 apa_lower -= BHt[c * m + j] * Kt[j * n + i];
@@ -174,11 +181,12 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
         }
     }
 
+    /* cppcheck-suppress uninitvar ; x is filled above for every index used */
     if (!kfi_all_finite(x, n) || !kfi_all_finite(P, n * n)) {
         return KF_ERR_INVALID_INPUT;
     }
-    memcpy(kf->x, x, (size_t)n * sizeof *x);
-    memcpy(kf->P, P, (size_t)(n * n) * sizeof *P);
+    (void)memcpy(kf->x, x, (size_t)n * sizeof *x);
+    (void)memcpy(kf->P, P, (size_t)n * (size_t)n * sizeof *P);
     kf->nis = nis;
     return KF_OK;
 }
@@ -186,7 +194,9 @@ KF_ALWAYS_INLINE int core_update(kf_state *kf, const kf_real *y, const kf_real *
 int kf_core_update(kf_state *kf, const kf_real *y, const kf_real *H) {
 #ifdef KF_SPECIALIZE
 #define KF_SIZE(N, M)                                                                              \
-    if (kf->n == (N) && kf->m == (M)) return core_update(kf, y, H, N, M);
+    if ((kf->n == (N)) && (kf->m == (M))) {                                                        \
+        return core_update(kf, y, H, N, M);                                                        \
+    }
     KF_SPECIALIZE
 #undef KF_SIZE
 #endif
@@ -198,7 +208,7 @@ int kf_update(kf_state *kf, const kf_real *z, const kf_real *H) {
     kf_real Hx[KF_MAX_MEAS];
     kf_real y[KF_MAX_MEAS];
 
-    if (kf == NULL || z == NULL || H == NULL) {
+    if (kf == NULL || z == NULL || H == NULL || !kf_dims_ok(kf)) {
         return KF_ERR_INVALID_INPUT;
     }
     if (!kfi_all_finite(z, kf->m)) {

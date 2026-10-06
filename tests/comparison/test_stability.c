@@ -1,6 +1,6 @@
-#include "unity.h"
 #include "kalman/kalman.h"
 #include "scenarios/ill_conditioned.h"
+#include "unity.h"
 
 #include <stdio.h>
 

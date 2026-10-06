@@ -30,27 +30,29 @@ __attribute__((section(".isr_vector"), used)) static void (*const vectors[16])(v
 /* Words below the stack pointer still holding STACK_PAINT were never used. */
 uint32_t fw_stack_used_bytes(void) {
     const uint32_t *p = &_ebss;
-    while (p < &_estack && *p == STACK_PAINT) ++p;
+    while (p < &_estack && *p == STACK_PAINT)
+        ++p;
     return (uint32_t)((const char *)&_estack - (const char *)p);
 }
 
 __attribute__((naked, noreturn)) void Reset_Handler(void) {
     /* Paint the stack region before anything uses it (r0..r2 only, no stack). */
-    __asm__ volatile(
-        "ldr r0, =_ebss\n"
-        "ldr r1, =_estack\n"
-        "ldr r2, =0xC5C5C5C5\n"
-        "1: cmp r0, r1\n"
-        "   bhs 2f\n"
-        "   str r2, [r0], #4\n"
-        "   b 1b\n"
-        "2: b fw_reset_c\n");
+    __asm__ volatile("ldr r0, =_ebss\n"
+                     "ldr r1, =_estack\n"
+                     "ldr r2, =0xC5C5C5C5\n"
+                     "1: cmp r0, r1\n"
+                     "   bhs 2f\n"
+                     "   str r2, [r0], #4\n"
+                     "   b 1b\n"
+                     "2: b fw_reset_c\n");
 }
 
 __attribute__((noreturn, used)) void fw_reset_c(void) {
     uint32_t *src = &_sidata, *dst = &_sdata;
-    while (dst < &_edata) *dst++ = *src++;
-    for (dst = &_sbss; dst < &_ebss; ++dst) *dst = 0;
+    while (dst < &_edata)
+        *dst++ = *src++;
+    for (dst = &_sbss; dst < &_ebss; ++dst)
+        *dst = 0;
 
     /* Enable CP10 and CP11 (the FPU) before any floating-point code runs. */
     *(volatile uint32_t *)0xE000ED88u |= 0xFu << 20;

@@ -1,6 +1,6 @@
-#include "unity.h"
 #include "kalman/kalman.h"
 #include "scenarios/constant_velocity.h"
+#include "unity.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -36,10 +36,12 @@ static double chi2_mean_bound(double dof, double z) {
 static double nees(const kf_state *kf, const kf_real *truth) {
     kf_real L[CV_N * CV_N], e[CV_N], w[CV_N];
     double s = 0;
-    for (int i = 0; i < CV_N; ++i) e[i] = kf->x[i] - truth[i];
+    for (int i = 0; i < CV_N; ++i)
+        e[i] = kf->x[i] - truth[i];
     TEST_ASSERT_EQUAL_INT(KF_OK, kf_cholesky(L, kf->P, CV_N));
     kf_solve_lower(w, L, e, CV_N, 1);
-    for (int i = 0; i < CV_N; ++i) s += (double)w[i] * (double)w[i];
+    for (int i = 0; i < CV_N; ++i)
+        s += (double)w[i] * (double)w[i];
     return s;
 }
 
@@ -60,12 +62,12 @@ void test_average_nis_and_nees_are_inside_95_percent_bounds(void) {
     }
 
     const double nis_dof = (double)TRIALS * STEPS * CV_M;
-    const double nis_avg = nis_sum / ((double)TRIALS * STEPS);  /* expected: m */
+    const double nis_avg = nis_sum / ((double)TRIALS * STEPS); /* expected: m */
     const double nis_lo = CV_M * chi2_mean_bound(nis_dof, -z95);
     const double nis_hi = CV_M * chi2_mean_bound(nis_dof, z95);
 
     const double nees_dof = (double)TRIALS * CV_N;
-    const double nees_avg = nees_sum / TRIALS;                  /* expected: n */
+    const double nees_avg = nees_sum / TRIALS; /* expected: n */
     const double nees_lo = CV_N * chi2_mean_bound(nees_dof, -z95);
     const double nees_hi = CV_N * chi2_mean_bound(nees_dof, z95);
 
@@ -75,8 +77,7 @@ void test_average_nis_and_nees_are_inside_95_percent_bounds(void) {
            KF_PRECISION_NAME, nees_avg, nees_lo, nees_hi);
 
     TEST_ASSERT_TRUE_MESSAGE(nis_avg >= nis_lo && nis_avg <= nis_hi, "NIS outside 95% bounds");
-    TEST_ASSERT_TRUE_MESSAGE(nees_avg >= nees_lo && nees_avg <= nees_hi,
-                             "NEES outside 95% bounds");
+    TEST_ASSERT_TRUE_MESSAGE(nees_avg >= nees_lo && nees_avg <= nees_hi, "NEES outside 95% bounds");
 }
 
 int main(void) {

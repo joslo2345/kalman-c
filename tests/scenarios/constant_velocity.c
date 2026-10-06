@@ -23,7 +23,8 @@ void cv_build_model(double dt, double q, double r, kf_real *F, kf_real *H, kf_re
     memset(H, 0, CV_M * CV_N * sizeof *H);
     H[0 * CV_N + 0] = 1;
     H[1 * CV_N + 1] = 1;
-    for (int i = 0; i < CV_N * CV_N; ++i) Q[i] = (kf_real)Qd[i];
+    for (int i = 0; i < CV_N * CV_N; ++i)
+        Q[i] = (kf_real)Qd[i];
     R[0] = R[3] = (kf_real)r;
     R[1] = R[2] = 0;
 }
@@ -37,30 +38,37 @@ void cv_scenario_init(cv_scenario *sc, int steps, unsigned long long seed) {
     double x[CV_N], w[CV_N], v[CV_M];
     rng r;
 
-    if (steps > CV_MAX_STEPS) steps = CV_MAX_STEPS;
+    if (steps > CV_MAX_STEPS)
+        steps = CV_MAX_STEPS;
     memset(sc, 0, sizeof *sc);
     sc->steps = steps;
 
     cv_q_double(Q, dt, q);
-    for (int i = 0; i < CV_N; ++i) P0[i * CV_N + i] = P0_diag[i];
+    for (int i = 0; i < CV_N; ++i)
+        P0[i * CV_N + i] = P0_diag[i];
     rng_cholesky(LQ, Q, CV_N);
     rng_cholesky(LP0, P0, CV_N);
 
     cv_build_model(dt, q, sigma * sigma, sc->F, sc->H, sc->Q, sc->R);
-    for (int i = 0; i < CV_N * CV_N; ++i) sc->P0[i] = (kf_real)P0[i];
-    for (int i = 0; i < CV_N; ++i) sc->x0_hat[i] = (kf_real)x0_hat[i];
+    for (int i = 0; i < CV_N * CV_N; ++i)
+        sc->P0[i] = (kf_real)P0[i];
+    for (int i = 0; i < CV_N; ++i)
+        sc->x0_hat[i] = (kf_real)x0_hat[i];
 
     rng_seed(&r, seed);
     rng_gauss_vec(&r, x, LP0, CV_N);
-    for (int i = 0; i < CV_N; ++i) x[i] += x0_hat[i];
+    for (int i = 0; i < CV_N; ++i)
+        x[i] += x0_hat[i];
 
     for (int k = 0; k < steps; ++k) {
         rng_gauss_vec(&r, w, LQ, CV_N);
         x[0] += dt * x[2];
         x[1] += dt * x[3];
-        for (int i = 0; i < CV_N; ++i) x[i] += w[i];
+        for (int i = 0; i < CV_N; ++i)
+            x[i] += w[i];
         rng_gauss_vec(&r, v, LR, CV_M);
-        for (int i = 0; i < CV_N; ++i) sc->truth[k][i] = (kf_real)x[i];
+        for (int i = 0; i < CV_N; ++i)
+            sc->truth[k][i] = (kf_real)x[i];
         sc->z[k][0] = (kf_real)(x[0] + v[0]);
         sc->z[k][1] = (kf_real)(x[1] + v[1]);
     }

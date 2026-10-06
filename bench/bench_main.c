@@ -56,10 +56,12 @@ static double time_per_step(const library *lib, const scenario *sc) {
     run_result res = {0};
     const double steps = (double)sc->steps * sc->trials;
 
-    if (lib->run(sc, &res) != RUN_OK) return NAN;
+    if (lib->run(sc, &res) != RUN_OK)
+        return NAN;
     for (int r = 0; r < REPEATS; ++r) {
         const double t0 = now_ns();
-        if (lib->run(sc, &res) != RUN_OK) return NAN;
+        if (lib->run(sc, &res) != RUN_OK)
+            return NAN;
         times[r] = (now_ns() - t0) / steps;
     }
     qsort(times, REPEATS, sizeof *times, cmp_double);
@@ -79,7 +81,8 @@ static void bench_linear(const scenario *sc, const library *libs, int nlibs) {
         run_result res = {0};
         res.measure = 1;
         res.estimates = l == 0 ? ours : theirs;
-        if (libs[l].run(sc, &res) != RUN_OK) continue;
+        if (libs[l].run(sc, &res) != RUN_OK)
+            continue;
         if (res.steps_to_failure >= 0) {
             fprintf(stderr, "bench: %s failed on %s at step %ld; skipping\n", libs[l].name, sc->id,
                     res.steps_to_failure);
@@ -90,12 +93,14 @@ static void bench_linear(const scenario *sc, const library *libs, int nlibs) {
             double max_diff = 0;
             for (size_t i = 0; i < len; ++i) {
                 const double d = fabs((double)ours[i] - (double)theirs[i]);
-                if (d > max_diff) max_diff = d;
+                if (d > max_diff)
+                    max_diff = d;
             }
             row(&libs[l], sc, "max_abs_diff", max_diff, "state");
         }
         const double t = time_per_step(&libs[l], sc);
-        if (!isnan(t)) row(&libs[l], sc, "time_per_step", t, "ns");
+        if (!isnan(t))
+            row(&libs[l], sc, "time_per_step", t, "ns");
         fflush(stdout);
     }
     free(ours);
@@ -106,7 +111,8 @@ static void bench_accuracy(const scenario *sc, const library *libs, int nlibs) {
     for (int l = 0; l < nlibs; ++l) {
         run_result res = {0};
         res.measure = 1;
-        if (libs[l].run(sc, &res) != RUN_OK) continue;
+        if (libs[l].run(sc, &res) != RUN_OK)
+            continue;
         if (res.steps_to_failure >= 0) {
             fprintf(stderr, "bench: %s %s failed on %s at step %ld; skipping\n", libs[l].name,
                     libs[l].filter, sc->id, res.steps_to_failure);
@@ -121,7 +127,8 @@ static void bench_stability(const scenario *sc, const library *libs, int nlibs) 
     for (int l = 0; l < nlibs; ++l) {
         run_result res = {0};
         res.measure = 1;
-        if (libs[l].run(sc, &res) != RUN_OK) continue;
+        if (libs[l].run(sc, &res) != RUN_OK)
+            continue;
         const long steps = res.steps_to_failure >= 0 ? res.steps_to_failure : (long)sc->steps;
         row(&libs[l], sc, "steps_to_failure", (double)steps, "steps");
     }
@@ -149,20 +156,25 @@ int main(int argc, char **argv) {
     const char *linear_ids[] = {"S1", "S2", "S5"};
     scenario *sc = malloc(sizeof *sc);
 
-    if (argc > 1) env = argv[1];
-    if (sc == NULL) return 1;
+    if (argc > 1)
+        env = argv[1];
+    if (sc == NULL)
+        return 1;
 
     for (size_t s = 0; s < sizeof linear_ids / sizeof *linear_ids; ++s) {
-        if (load(sc, dir, linear_ids[s]) != 0) return 1;
+        if (load(sc, dir, linear_ids[s]) != 0)
+            return 1;
         bench_linear(sc, linear_libs, nlinear);
         scenario_free(sc);
     }
 
-    if (load(sc, dir, "S3") != 0) return 1;
+    if (load(sc, dir, "S3") != 0)
+        return 1;
     bench_accuracy(sc, nonlinear_libs, nnonlinear);
     scenario_free(sc);
 
-    if (load(sc, dir, "S4") != 0) return 1;
+    if (load(sc, dir, "S4") != 0)
+        return 1;
     bench_stability(sc, linear_libs, nlinear);
     scenario_free(sc);
 

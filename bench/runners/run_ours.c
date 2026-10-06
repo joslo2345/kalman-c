@@ -14,7 +14,8 @@ static void setup(kf_state *kf, const scenario *sc) {
 #define RUN_LOOP(step_expr)                                                                        \
     do {                                                                                           \
         metrics mt;                                                                                \
-        if (out->measure) metrics_begin(&mt, out);                                                 \
+        if (out->measure)                                                                          \
+            metrics_begin(&mt, out);                                                               \
         for (int trial = 0; trial < sc->trials; ++trial) {                                         \
             kf_state kf;                                                                           \
             setup(&kf, sc);                                                                        \
@@ -22,19 +23,22 @@ static void setup(kf_state *kf, const scenario *sc) {
                 const kf_real *z = scenario_z(sc, trial, k);                                       \
                 const int ok = (step_expr);                                                        \
                 if (out->measure) {                                                                \
-                    if (metrics_step(&mt, sc, out, trial, k, kf.x, kf.P, ok)) goto done;           \
+                    if (metrics_step(&mt, sc, out, trial, k, kf.x, kf.P, ok))                      \
+                        goto done;                                                                 \
                 } else if (!ok) {                                                                  \
                     return RUN_FAILED;                                                             \
                 }                                                                                  \
             }                                                                                      \
         }                                                                                          \
     done:                                                                                          \
-        if (out->measure) metrics_end(&mt, sc, out);                                               \
+        if (out->measure)                                                                          \
+            metrics_end(&mt, sc, out);                                                             \
         return RUN_OK;                                                                             \
     } while (0)
 
 int run_ours_kf(const scenario *sc, run_result *out) {
-    if (sc->meas != MEAS_LINEAR) return RUN_UNSUPPORTED;
+    if (sc->meas != MEAS_LINEAR)
+        return RUN_UNSUPPORTED;
     RUN_LOOP(kf_predict(&kf, sc->F) == KF_OK && kf_update(&kf, z, sc->H) == KF_OK);
 }
 

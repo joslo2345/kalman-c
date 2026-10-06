@@ -1,9 +1,9 @@
-#include "unity.h"
-#include "kalman/kalman.h"
-#include "baselines/naive_kf.h"
 #include "baselines/baseline_tinyekf.h"
+#include "baselines/naive_kf.h"
+#include "kalman/kalman.h"
 #include "scenarios/constant_velocity.h"
 #include "scenarios/rng.h"
+#include "unity.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -81,7 +81,8 @@ static void range_bearing(const kf_real *x, kf_real *z, kf_real *H) {
     const double r2 = px * px + py * py, r = sqrt(r2);
     z[0] = (kf_real)r;
     z[1] = (kf_real)atan2(py, px);
-    for (int i = 0; i < CV_M * CV_N; ++i) H[i] = 0;
+    for (int i = 0; i < CV_M * CV_N; ++i)
+        H[i] = 0;
     H[0 * CV_N + 0] = (kf_real)(px / r);
     H[0 * CV_N + 1] = (kf_real)(py / r);
     H[1 * CV_N + 0] = (kf_real)(-py / r2);
@@ -99,7 +100,8 @@ static int ekf_h(kf_real *z_out, kf_real *H_out, const kf_real *x, int n, int m,
 static int ekf_f(kf_real *x_out, kf_real *F_out, const kf_real *x, int n, void *ctx) {
     (void)ctx;
     kf_mat_mul(x_out, sc.F, x, n, n, 1);
-    for (int i = 0; i < n * n; ++i) F_out[i] = sc.F[i];
+    for (int i = 0; i < n * n; ++i)
+        F_out[i] = sc.F[i];
     return 0;
 }
 
@@ -112,7 +114,8 @@ void test_ekf_matches_tinyekf_on_range_bearing(void) {
     rng_seed(&g, 7);
 
     cv_scenario_setup_kf(&sc, &ours);
-    for (int i = 0; i < CV_M * CV_M; ++i) ours.R[i] = R[i];
+    for (int i = 0; i < CV_M * CV_M; ++i)
+        ours.R[i] = R[i];
     cv_scenario_setup_tinyekf(&sc, &theirs);
 
     for (int k = 0; k < 500; ++k) {

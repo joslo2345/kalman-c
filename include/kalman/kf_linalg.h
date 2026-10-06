@@ -10,8 +10,8 @@
 #include "kalman/kf_types.h"
 
 /* C (r x c) = A (r x k) * B (k x c) */
-void kf_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
-                const kf_real *KF_RESTRICT B, int r, int k, int c);
+void kf_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A, const kf_real *KF_RESTRICT B,
+                int r, int k, int c);
 
 /* C (r x c) = A (r x k) * B^T, with B stored as (c x k) */
 void kf_mat_mul_abt(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,

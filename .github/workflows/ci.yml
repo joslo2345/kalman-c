@@ -46,3 +46,32 @@ jobs:
           cmake -S embedded -B build-fw
           -DCMAKE_TOOLCHAIN_FILE=$PWD/embedded/arm-none-eabi.cmake
           && cmake --build build-fw -j 4
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update && sudo apt-get install -y cppcheck
+          # Pinned to the versions the code was checked with locally.
+          pip install clang-tidy==22.1.8 clang-format==23.1.2
+      - name: clang-format
+        run: >
+          clang-format --dry-run --Werror
+          include/kalman/*.h src/*.c src/*.h tests/unit/*.c tests/comparison/*.c
+          tests/scenarios/*.[ch] tests/baselines/*.[ch] bench/*.[ch] bench/runners/*.[ch]
+          embedded/*.[ch] embedded/qemu/*.c
+      - name: clang-tidy
+        run: |
+          for cfg in -UKF_SPECIALIZE "-DKF_SPECIALIZE=KF_SIZE(4,2)" -DKF_USE_DOUBLE; do
+            clang-tidy --quiet src/*.c -- -std=c99 -Iinclude -Isrc "$cfg"
+          done
+      - name: cppcheck
+        run: |
+          for cfg in -UKF_SPECIALIZE "-DKF_SPECIALIZE=KF_SIZE(4,2)"; do
+            cppcheck --std=c99 --enable=warning,style,performance,portability --inline-suppr \
+              --error-exitcode=1 --suppress=missingIncludeSystem -Iinclude -Isrc "$cfg" src/
+          done
+      - name: MISRA C:2012 subset
+        run: python3 scripts/check_misra.py

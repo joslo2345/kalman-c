@@ -8,9 +8,9 @@
  * and every precision sees the same data.
  */
 
-#include "kalman/kalman.h"
-#include "baselines/naive_kf.h"
 #include "baselines/baseline_tinyekf.h"
+#include "baselines/naive_kf.h"
+#include "kalman/kalman.h"
 
 #define CV_N 4
 #define CV_M 2

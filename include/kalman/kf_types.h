@@ -9,12 +9,13 @@ typedef enum {
     KF_ERR_INVALID_INPUT = -1,         /* NULL pointer, bad dimension, NaN/Inf input */
     KF_ERR_NOT_POSITIVE_DEFINITE = -2, /* e.g. a singular innovation covariance */
     KF_ERR_NOT_IMPLEMENTED = -3,
-    KF_ERR_MODEL_FAILED = -4           /* a user-supplied model callback returned non-zero */
+    KF_ERR_MODEL_FAILED = -4 /* a user-supplied model callback returned non-zero */
 } kf_status;
 
 /* Matrices are flat, row-major arrays sized for the maximum dimensions. */
 typedef struct {
-    int n, m;                               /* state and measurement sizes */
+    int n;                                  /* state size */
+    int m;                                  /* measurement size */
     kf_real x[KF_MAX_STATE];                /* state estimate */
     kf_real P[KF_MAX_STATE * KF_MAX_STATE]; /* covariance */
     kf_real Q[KF_MAX_STATE * KF_MAX_STATE]; /* process noise */

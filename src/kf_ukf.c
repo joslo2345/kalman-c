@@ -1,4 +1,5 @@
 #include "kalman/kf_ukf.h"
+#include "kf_internal.h"
 #include "kf_linalg_impl.h"
 
 #include <math.h>
@@ -9,7 +10,10 @@
 /* Sigma points are stored one per row: X[j * n + i] is component i of point j. */
 typedef struct {
     int count;
-    kf_real wm0, wc0, wi; /* mean/covariance weights for point 0, shared weight for the rest */
+    /* Mean and covariance weights for point 0, and the weight shared by the rest. */
+    kf_real wm0;
+    kf_real wc0;
+    kf_real wi;
     kf_real X[KF_MAX_SIGMA * KF_MAX_STATE];
 } sigma_set;
 
@@ -23,21 +27,21 @@ static int make_sigma_points(sigma_set *s, const kf_state *kf, const kf_ukf_para
     const kf_real c = p->alpha * p->alpha * ((kf_real)n + p->kappa);
     int status;
 
-    if (!(c > 0) || !isfinite(c) || !isfinite(p->beta)) {
+    if (!(c > (kf_real)0) || !isfinite(c) || !isfinite(p->beta)) {
         return KF_ERR_INVALID_INPUT;
     }
     status = kfi_cholesky(L, kf->P, n);
-    if (status != KF_OK) {
+    if (status != (int)KF_OK) {
         return status;
     }
 
     s->count = 2 * n + 1;
     s->wm0 = (c - (kf_real)n) / c;
-    s->wc0 = s->wm0 + (1 - p->alpha * p->alpha + p->beta);
+    s->wc0 = s->wm0 + (((kf_real)1 - (p->alpha * p->alpha)) + p->beta);
     s->wi = (kf_real)0.5 / c;
 
     const kf_real scale = KF_SQRT(c);
-    memcpy(s->X, kf->x, (size_t)n * sizeof *kf->x);
+    (void)memcpy(s->X, kf->x, (size_t)n * sizeof *kf->x);
     for (int i = 0; i < n; ++i) {
         kf_real *plus = &s->X[(1 + i) * n];
         kf_real *minus = &s->X[(1 + n + i) * n];
@@ -60,7 +64,7 @@ static kf_real weight_c(const sigma_set *s, int j) {
 
 /* mean (dim) = sum_j Wm_j Y_j, for points stored one per row of width dim */
 static void weighted_mean(kf_real *mean, const sigma_set *s, const kf_real *Y, int dim) {
-    memset(mean, 0, (size_t)dim * sizeof *mean);
+    (void)memset(mean, 0, (size_t)dim * sizeof *mean);
     for (int j = 0; j < s->count; ++j) {
         const kf_real w = weight_m(s, j);
         for (int i = 0; i < dim; ++i) {
@@ -72,7 +76,7 @@ static void weighted_mean(kf_real *mean, const sigma_set *s, const kf_real *Y, i
 /* C (da x db) = sum_j Wc_j (A_j - a)(B_j - b)^T */
 static void weighted_cross_cov(kf_real *C, const sigma_set *s, const kf_real *A, const kf_real *a,
                                int da, const kf_real *B, const kf_real *b, int db) {
-    memset(C, 0, (size_t)(da * db) * sizeof *C);
+    (void)memset(C, 0, (size_t)da * (size_t)db * sizeof *C);
     for (int j = 0; j < s->count; ++j) {
         const kf_real w = weight_c(s, j);
         for (int r = 0; r < da; ++r) {
@@ -91,16 +95,16 @@ int kf_ukf_predict(kf_state *kf, const kf_ukf_params *params, kf_ukf_transition_
     kf_real P[KF_MAX_STATE * KF_MAX_STATE];
     int status;
 
-    if (kf == NULL || f == NULL) {
+    if (kf == NULL || f == NULL || !kf_dims_ok(kf)) {
         return KF_ERR_INVALID_INPUT;
     }
     const int n = kf->n;
     status = make_sigma_points(&s, kf, params ? params : &default_params);
-    if (status != KF_OK) {
+    if (status != (int)KF_OK) {
         return status;
     }
 
-    memset(Y, 0, sizeof Y);
+    (void)memset(Y, 0, sizeof Y);
     for (int j = 0; j < s.count; ++j) {
         if (f(&Y[j * n], &s.X[j * n], n, ctx) != 0) {
             return KF_ERR_MODEL_FAILED;
@@ -119,8 +123,8 @@ int kf_ukf_predict(kf_state *kf, const kf_ukf_params *params, kf_ukf_transition_
     if (!kfi_all_finite(P, n * n) || !kfi_cholesky_ok(P, n)) {
         return KF_ERR_NOT_POSITIVE_DEFINITE;
     }
-    memcpy(kf->x, x, (size_t)n * sizeof *x);
-    memcpy(kf->P, P, (size_t)(n * n) * sizeof *P);
+    (void)memcpy(kf->x, x, (size_t)n * sizeof *x);
+    (void)memcpy(kf->P, P, (size_t)n * (size_t)n * sizeof *P);
     return KF_OK;
 }
 
@@ -140,10 +144,10 @@ int kf_ukf_update(kf_state *kf, const kf_real *z, const kf_ukf_params *params,
     kf_real KSKt[KF_MAX_STATE * KF_MAX_STATE];
     kf_real x[KF_MAX_STATE];
     kf_real P[KF_MAX_STATE * KF_MAX_STATE];
-    kf_real nis = 0;
+    kf_real nis = (kf_real)0;
     int status;
 
-    if (kf == NULL || z == NULL || h == NULL) {
+    if (kf == NULL || z == NULL || h == NULL || !kf_dims_ok(kf)) {
         return KF_ERR_INVALID_INPUT;
     }
     const int n = kf->n;
@@ -152,11 +156,11 @@ int kf_ukf_update(kf_state *kf, const kf_real *z, const kf_ukf_params *params,
         return KF_ERR_INVALID_INPUT;
     }
     status = make_sigma_points(&s, kf, params ? params : &default_params);
-    if (status != KF_OK) {
+    if (status != (int)KF_OK) {
         return status;
     }
 
-    memset(Z, 0, sizeof Z);
+    (void)memset(Z, 0, sizeof Z);
     for (int j = 0; j < s.count; ++j) {
         if (h(&Z[j * m], &s.X[j * n], n, m, ctx) != 0) {
             return KF_ERR_MODEL_FAILED;
@@ -174,7 +178,7 @@ int kf_ukf_update(kf_state *kf, const kf_real *z, const kf_ukf_params *params,
     weighted_cross_cov(Pxz, &s, s.X, kf->x, n, Z, z_hat, m);
 
     status = kfi_cholesky(L, S, m);
-    if (status != KF_OK) {
+    if (status != (int)KF_OK) {
         return status;
     }
 
@@ -204,8 +208,8 @@ int kf_ukf_update(kf_state *kf, const kf_real *z, const kf_ukf_params *params,
     if (!kfi_cholesky_ok(P, n)) {
         return KF_ERR_NOT_POSITIVE_DEFINITE;
     }
-    memcpy(kf->x, x, (size_t)n * sizeof *x);
-    memcpy(kf->P, P, (size_t)(n * n) * sizeof *P);
+    (void)memcpy(kf->x, x, (size_t)n * sizeof *x);
+    (void)memcpy(kf->P, P, (size_t)n * (size_t)n * sizeof *P);
     kf->nis = nis;
     return KF_OK;
 }

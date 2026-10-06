@@ -2,15 +2,18 @@
 
 /* Public entry points; the kernels live in kf_linalg_impl.h. */
 
-void kf_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A, const kf_real *KF_RESTRICT B, int r, int k, int c) {
+void kf_mat_mul(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A, const kf_real *KF_RESTRICT B,
+                int r, int k, int c) {
     kfi_mat_mul(C, A, B, r, k, c);
 }
 
-void kf_mat_mul_abt(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A, const kf_real *KF_RESTRICT B, int r, int k, int c) {
+void kf_mat_mul_abt(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
+                    const kf_real *KF_RESTRICT B, int r, int k, int c) {
     kfi_mat_mul_abt(C, A, B, r, k, c);
 }
 
-void kf_mat_mul_atb(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A, const kf_real *KF_RESTRICT B, int r, int k, int c) {
+void kf_mat_mul_atb(kf_real *KF_RESTRICT C, const kf_real *KF_RESTRICT A,
+                    const kf_real *KF_RESTRICT B, int r, int k, int c) {
     kfi_mat_mul_atb(C, A, B, r, k, c);
 }
 

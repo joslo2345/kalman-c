@@ -18,8 +18,8 @@ typedef int (*kf_ekf_transition_fn)(kf_real *x_out, kf_real *F_out, const kf_rea
                                     void *ctx);
 
 /* z_out (m) = h(x),  H_out (m x n) = dh/dx at x */
-typedef int (*kf_ekf_measurement_fn)(kf_real *z_out, kf_real *H_out, const kf_real *x, int n,
-                                     int m, void *ctx);
+typedef int (*kf_ekf_measurement_fn)(kf_real *z_out, kf_real *H_out, const kf_real *x, int n, int m,
+                                     void *ctx);
 
 /* x = f(x),  P = F P F^T + Q */
 int kf_ekf_predict(kf_state *kf, kf_ekf_transition_fn f, void *ctx);

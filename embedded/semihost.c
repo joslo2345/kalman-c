@@ -24,7 +24,8 @@ void sh_put_int(long v) {
         *--p = (char)('0' + u % 10);
         u /= 10;
     } while (u != 0);
-    if (v < 0) *--p = '-';
+    if (v < 0)
+        *--p = '-';
     sh_puts(p);
 }
 

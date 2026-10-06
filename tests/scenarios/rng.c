@@ -36,23 +36,29 @@ double rng_gauss(rng *r) {
 
 void rng_gauss_vec(rng *r, double *x, const double *L, int n) {
     double g[64];
-    for (int i = 0; i < n; ++i) g[i] = rng_gauss(r);
+    for (int i = 0; i < n; ++i)
+        g[i] = rng_gauss(r);
     for (int i = 0; i < n; ++i) {
         x[i] = 0;
-        for (int j = 0; j <= i; ++j) x[i] += L[i * n + j] * g[j];
+        for (int j = 0; j <= i; ++j)
+            x[i] += L[i * n + j] * g[j];
     }
 }
 
 int rng_cholesky(double *L, const double *A, int n) {
-    for (int i = 0; i < n * n; ++i) L[i] = 0;
+    for (int i = 0; i < n * n; ++i)
+        L[i] = 0;
     for (int j = 0; j < n; ++j) {
         double d = A[j * n + j];
-        for (int p = 0; p < j; ++p) d -= L[j * n + p] * L[j * n + p];
-        if (!(d > 0)) return -1;
+        for (int p = 0; p < j; ++p)
+            d -= L[j * n + p] * L[j * n + p];
+        if (!(d > 0))
+            return -1;
         L[j * n + j] = sqrt(d);
         for (int i = j + 1; i < n; ++i) {
             double s = A[i * n + j];
-            for (int p = 0; p < j; ++p) s -= L[i * n + p] * L[j * n + p];
+            for (int p = 0; p < j; ++p)
+                s -= L[i * n + p] * L[j * n + p];
             L[i * n + j] = s / L[j * n + j];
         }
     }

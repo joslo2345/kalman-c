@@ -51,23 +51,27 @@ int scenario_load(scenario *sc, const char *dir, const char *id) {
         fprintf(stderr, "scenario: %s is not a version 1 kalman-vectors file\n", path);
         goto fail;
     }
-    if (fscanf(f, " id %15s", sc->id) != 1) goto fail;
-    if (fscanf(f, " description%255[^\n]", line) != 1) goto fail;
-    if (read_int(f, "n", &sc->n) || read_int(f, "m", &sc->m) ||
-        read_int(f, "steps", &sc->steps) || read_int(f, "trials", &sc->trials)) {
+    if (fscanf(f, " id %15s", sc->id) != 1)
+        goto fail;
+    if (fscanf(f, " description%255[^\n]", line) != 1)
+        goto fail;
+    if (read_int(f, "n", &sc->n) || read_int(f, "m", &sc->m) || read_int(f, "steps", &sc->steps) ||
+        read_int(f, "trials", &sc->trials)) {
         goto fail;
     }
     if (sc->n > KF_MAX_STATE || sc->m > KF_MAX_MEAS) {
-        fprintf(stderr, "scenario: %s needs KF_MAX_STATE >= %d and KF_MAX_MEAS >= %d\n", id,
-                sc->n, sc->m);
+        fprintf(stderr, "scenario: %s needs KF_MAX_STATE >= %d and KF_MAX_MEAS >= %d\n", id, sc->n,
+                sc->m);
         goto fail;
     }
-    if (fscanf(f, " dt %lf measurement %63s", &sc->dt, tok) != 2) goto fail;
+    if (fscanf(f, " dt %lf measurement %63s", &sc->dt, tok) != 2)
+        goto fail;
     if (strcmp(tok, "linear") == 0) {
         sc->meas = MEAS_LINEAR;
     } else if (strcmp(tok, "range_bearing") == 0) {
         double sx, sy;
-        if (fscanf(f, "%lf %lf", &sx, &sy) != 2) goto fail;
+        if (fscanf(f, "%lf %lf", &sx, &sy) != 2)
+            goto fail;
         sc->meas = MEAS_RANGE_BEARING;
         sc->sensor[0] = (kf_real)sx;
         sc->sensor[1] = (kf_real)sy;
@@ -83,17 +87,20 @@ int scenario_load(scenario *sc, const char *dir, const char *id) {
         goto fail;
     }
 
-    if (fscanf(f, " data %63s", tok) != 1) goto fail;
+    if (fscanf(f, " data %63s", tok) != 1)
+        goto fail;
     if (strcmp(tok, "zero") == 0) {
         fclose(f);
         return 0;
     }
-    if (strcmp(tok, "rows") != 0) goto fail;
+    if (strcmp(tok, "rows") != 0)
+        goto fail;
 
     const size_t rows = (size_t)sc->trials * (size_t)sc->steps;
     sc->truth = malloc(rows * (size_t)n * sizeof *sc->truth);
     sc->z = malloc(rows * (size_t)m * sizeof *sc->z);
-    if (sc->truth == NULL || sc->z == NULL) goto fail;
+    if (sc->truth == NULL || sc->z == NULL)
+        goto fail;
 
     for (size_t r = 0; r < rows; ++r) {
         int trial, k;
@@ -103,11 +110,13 @@ int scenario_load(scenario *sc, const char *dir, const char *id) {
             goto fail;
         }
         for (int i = 0; i < n; ++i) {
-            if (fscanf(f, "%lf", &v) != 1) goto fail;
+            if (fscanf(f, "%lf", &v) != 1)
+                goto fail;
             sc->truth[r * n + i] = (kf_real)v;
         }
         for (int i = 0; i < m; ++i) {
-            if (fscanf(f, "%lf", &v) != 1) goto fail;
+            if (fscanf(f, "%lf", &v) != 1)
+                goto fail;
             sc->z[r * m + i] = (kf_real)v;
         }
     }
@@ -129,12 +138,14 @@ void scenario_free(scenario *sc) {
 }
 
 const kf_real *scenario_truth(const scenario *sc, int trial, int k) {
-    if (sc->truth == NULL) return zero_row;
+    if (sc->truth == NULL)
+        return zero_row;
     return &sc->truth[((size_t)trial * sc->steps + k) * sc->n];
 }
 
 const kf_real *scenario_z(const scenario *sc, int trial, int k) {
-    if (sc->z == NULL) return zero_row;
+    if (sc->z == NULL)
+        return zero_row;
     return &sc->z[((size_t)trial * sc->steps + k) * sc->m];
 }
 

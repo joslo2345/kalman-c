@@ -1,5 +1,5 @@
-#include "unity.h"
 #include "kalman/kalman.h"
+#include "unity.h"
 
 #ifdef KF_USE_DOUBLE
 #define TOL 1e-9
@@ -23,9 +23,9 @@ void test_scalar_update_matches_closed_form(void) {
     kf.R[0] = 1;
 
     TEST_ASSERT_EQUAL_INT(KF_OK, kf_update(&kf, z, H));
-    assert_near(1.0, kf.x[0]);   /* K = 0.5 */
+    assert_near(1.0, kf.x[0]); /* K = 0.5 */
     assert_near(0.5, kf.P[0]);
-    assert_near(2.0, kf.nis);    /* y^2 / S = 4 / 2 */
+    assert_near(2.0, kf.nis); /* y^2 / S = 4 / 2 */
 }
 
 void test_scalar_predict_matches_closed_form(void) {
@@ -38,7 +38,7 @@ void test_scalar_predict_matches_closed_form(void) {
 
     TEST_ASSERT_EQUAL_INT(KF_OK, kf_predict(&kf, F));
     assert_near(2.0, kf.x[0]);
-    assert_near(3.0, kf.P[0]);   /* 4 * 0.5 + 1 */
+    assert_near(3.0, kf.P[0]); /* 4 * 0.5 + 1 */
 }
 
 void test_constant_velocity_update_then_predict(void) {
@@ -104,7 +104,8 @@ void test_covariance_stays_symmetric_positive_definite_over_long_run(void) {
     const kf_real H[8] = {1, 0, 0, 0, 0, 1, 0, 0};
     TEST_ASSERT_EQUAL_INT(KF_OK, kf_init(&kf, 4, 2));
     kf_mat_identity(kf.P, 4);
-    for (int i = 0; i < 4; ++i) kf.Q[i * 4 + i] = (kf_real)1e-3;
+    for (int i = 0; i < 4; ++i)
+        kf.Q[i * 4 + i] = (kf_real)1e-3;
     kf.R[0] = kf.R[3] = (kf_real)0.25;
 
     for (int k = 0; k < 10000; ++k) {
