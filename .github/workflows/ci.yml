@@ -35,14 +35,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install arm-none-eabi-gcc
-        run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi
-      - name: Build library for Cortex-M4F
+        with:
+          submodules: recursive
+      - name: Install arm-none-eabi-gcc and newlib
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi
+      # Builds every Cortex-M4F benchmark image (kalman-c, specialized, naive,
+      # TinyEKF). Running them needs QEMU with plugin headers; see CLAUDE.md.
+      - name: Build Cortex-M4F firmware
         run: >
-          cmake -B build-arm
-          -DCMAKE_SYSTEM_NAME=Generic
-          -DCMAKE_C_COMPILER=arm-none-eabi-gcc
-          -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
-          -DCMAKE_C_FLAGS="-mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard"
-          -DKF_BUILD_TESTS=OFF
-          && cmake --build build-arm
+          cmake -S embedded -B build-fw
+          -DCMAKE_TOOLCHAIN_FILE=$PWD/embedded/arm-none-eabi.cmake
+          && cmake --build build-fw -j 4

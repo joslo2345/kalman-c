@@ -11,9 +11,10 @@ Done so far:
 - Steps 1–5: scaffolding.
 - Steps 6.1–6.4: `kf_linalg`, the linear KF, the EKF, and the UKF.
 - Step 7: baselines, scenarios, and comparison tests.
-- Step 8 (desktop part): the frozen S1–S5 vectors, the benchmark harness, and the README table.
+- Step 8: the frozen S1–S5 vectors, the desktop benchmark harness, and the README table.
+- Step 8, embedded numbers: Cortex-M4F firmware run under QEMU (no physical board).
 
-Still to do: the Step 8 embedded numbers (cycles, flash, RAM on an STM32 board), Steps 9–12, and Steps 6.5 (square-root variant) and 6.6 (fixed-point).
+Still to do: Steps 9–12, and Steps 6.5 (square-root variant) and 6.6 (fixed-point). Real-board DWT cycle counts are still missing, because QEMU can't provide them (see below).
 
 Performance (see the README table): the generic build is about 2–3× slower than TinyEKF. With `KF_SPECIALIZE` listing the sizes in use, it matches or beats TinyEKF (S2: 57 vs 63 ns; S5: 2.3 vs 2.05 µs on an M3 Pro). TinyEKF's speed comes from compile-time dimensions, and `KF_SPECIALIZE` gives us the same. The stability test shows the Joseph-form KF stays positive-definite for 1M float steps where the baselines fail, so the square-root variant is not urgent.
 
@@ -94,6 +95,28 @@ python3 scripts/update_readme_table.py results/results.csv kalman-c
 - `KF_BUILD_BENCH` raises `KF_MAX_STATE` to 15 for S5. The `KF_MAX_STATE` and `KF_MAX_MEAS` cache variables override the defaults in any build.
 - For the specialized column, configure a second bench build with `'-DKF_SPECIALIZE=KF_SIZE(2,1)KF_SIZE(4,2)KF_SIZE(15,6)'`. It reports as `kalman-c-specialized`. Always pass `KF_SPECIALIZE` as a cache variable: in `CMAKE_C_FLAGS`, the Makefile shell silently drops it.
 - Commit the code before running the benchmark, so the recorded commit hash matches the code that produced the numbers.
+
+Embedded benchmark (STM32F405 / Cortex-M4F, emulated):
+
+```bash
+# Arm GNU Toolchain 14.2.Rel1 lives in ~/.local/opt (unpacked tarball, no sudo); QEMU comes from Homebrew.
+export ARM_TOOLCHAIN_DIR=$HOME/.local/opt/arm-gnu-toolchain-14.2.rel1-darwin-arm64-arm-none-eabi
+cmake -S embedded -B build-fw -DCMAKE_TOOLCHAIN_FILE=$PWD/embedded/arm-none-eabi.cmake   # the toolchain path must be absolute
+cmake --build build-fw -j 8
+python3 scripts/run_embedded.py build-fw >> results/results.csv   # needs SDKROOT set, to build the QEMU plugin
+```
+
+- `embedded/` is a standalone CMake project, separate from the main one. It contains:
+  - the startup code, linker script and semihosting;
+  - one adapter per library (`fw_<lib>.c`), behind the `fw_filter.h` interface;
+  - `fw_empty.c`, the harness on its own, used as the baseline.
+- Each library is built twice, as `fw_<lib>_1000.elf` and `fw_<lib>_0.elf`. The two differ only in a volatile step count.
+- `scripts/run_embedded.py` runs both images on QEMU's `netduinoplus2` board with the `embedded/qemu/icount.c` TCG plugin:
+  - `instructions_per_step` is the difference in instruction count, divided by 1,000.
+  - Flash and RAM come from `arm-none-eabi-size` on the 1000-step image. `stack_bytes` comes from the painted-stack high-water mark.
+- **It is instructions, not cycles.** QEMU doesn't model the DWT counter, pipeline timing or flash wait states, so the guide's `cycles_per_step` needs a real board.
+- Firmware is built with `KF_MAX_STATE=4` and `KF_MAX_MEAS=2`, the same as TinyEKF's fixed 4×2.
+- GCC with `-std=c99` doesn't fuse multiply-adds, so the specialized and generic firmware are bit-identical, unlike on desktop clang.
 
 ## Testing and benchmarking model
 

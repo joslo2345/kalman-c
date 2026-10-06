@@ -3,8 +3,8 @@ import csv
 import sys
 from collections import defaultdict
 
-LOWER_IS_BETTER = {"time_per_step", "cycles_per_step", "rmse", "heap_allocations",
-                   "peak_memory", "flash_bytes", "ram_bytes"}
+LOWER_IS_BETTER = {"time_per_step", "cycles_per_step", "instructions_per_step", "rmse",
+                   "heap_allocations", "peak_memory", "flash_bytes", "ram_bytes", "stack_bytes"}
 HIGHER_IS_BETTER = {"steps_to_failure"}
 
 rows = list(csv.DictReader(open(sys.argv[1], newline="")))
