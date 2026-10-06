@@ -12,11 +12,18 @@ change the API.
 - Square-root Kalman filter in UD form (`kf_sqrt.h`: `kf_sr_*`), linear and extended. It uses Bierman's measurement update, applied to measurements whitened by R's UD factors, and Thornton's weighted Gram-Schmidt predict. In `float`, at R = 1e-10, the position variance stays within 2.8e-7 of a float64 reference over 100,000 steps; the Joseph-form filter drifts to 1.4e-4.
 - `test_sqrt_accuracy`, which checks covariance accuracy against a float64 reference computed inside the test.
 - An `SRKF` row in the desktop and Cortex-M4F benchmarks.
+- A fixed-point linear Kalman filter (`kf_fixed.h`: `kf_fx_*`).
+  - It uses Q-format `int32_t` with `KF_FX_FRAC` fractional bits (default 20; a CMake option), 64-bit exact dot products that are rounded once, symmetric rounding, an integer square root, and the same O(n²m) Joseph form.
+  - Overflow returns the new `KF_ERR_OVERFLOW` and leaves the state unchanged.
+  - `kf_fx_from_double` and `kf_fx_to_double` convert values, with range checks.
+- Cortex-M3 firmware (STM32F205, no FPU, QEMU `netduino2`) for kalman-c in `float` and fixed point and for TinyEKF, plus a fixed-point image on the M4F.
+- A fixed-point benchmark row on the desktop (`q18`), and a CI job with `KF_FX_FRAC=16`.
 
 ### Changed
 
 - The KF/EKF predict and update cores re-check `n` and `m` after model callbacks run, since `ctx` may alias the filter state.
 - The benchmark harness reports runners that fail instead of skipping them silently.
+- The firmware's `filter_x` returns raw 32-bit state words, so float and Q-format states print alike.
 
 ## [0.1.0] - 2026-10-05
 

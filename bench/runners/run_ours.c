@@ -129,3 +129,53 @@ done:
     }
     return RUN_OK;
 }
+
+/* ---- Fixed-point filter ---- */
+
+int run_ours_fx(const scenario *sc, run_result *out) {
+    static const kf_fx zero_z[KF_MAX_MEAS];
+    kf_real x[KF_MAX_STATE], P[KF_MAX_STATE * KF_MAX_STATE];
+    metrics mt;
+
+    if (sc->meas != MEAS_LINEAR) {
+        return RUN_UNSUPPORTED;
+    }
+    if (!sc->fx_ok) {
+        return RUN_FAILED; /* a value does not fit the Q format */
+    }
+    if (out->measure) {
+        metrics_begin(&mt, out);
+    }
+    for (int trial = 0; trial < sc->trials; ++trial) {
+        kf_fx_state kf;
+        kf_fx_init(&kf, sc->n, sc->m);
+        memcpy(kf.x, sc->fx_x0, (size_t)sc->n * sizeof *kf.x);
+        memcpy(kf.P, sc->fx_P0, (size_t)(sc->n * sc->n) * sizeof *kf.P);
+        memcpy(kf.Q, sc->fx_Q, (size_t)(sc->n * sc->n) * sizeof *kf.Q);
+        memcpy(kf.R, sc->fx_R, (size_t)(sc->m * sc->m) * sizeof *kf.R);
+        for (int k = 0; k < sc->steps; ++k) {
+            const kf_fx *z =
+                sc->fx_z != NULL ? &sc->fx_z[((size_t)trial * sc->steps + k) * sc->m] : zero_z;
+            const int ok =
+                kf_fx_predict(&kf, sc->fx_F) == KF_OK && kf_fx_update(&kf, z, sc->fx_H) == KF_OK;
+            if (out->measure) {
+                for (int i = 0; i < sc->n; ++i) {
+                    x[i] = (kf_real)kf_fx_to_double(kf.x[i]);
+                }
+                for (int i = 0; i < sc->n * sc->n; ++i) {
+                    P[i] = (kf_real)kf_fx_to_double(kf.P[i]);
+                }
+                if (metrics_step(&mt, sc, out, trial, k, x, P, ok)) {
+                    goto done;
+                }
+            } else if (!ok) {
+                return RUN_FAILED;
+            }
+        }
+    }
+done:
+    if (out->measure) {
+        metrics_end(&mt, sc, out);
+    }
+    return RUN_OK;
+}

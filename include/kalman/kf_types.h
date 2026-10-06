@@ -13,7 +13,8 @@ typedef enum {
     KF_OK = 0,                         /**< Success. */
     KF_ERR_INVALID_INPUT = -1,         /**< NULL pointer, bad dimension, or NaN/Inf input. */
     KF_ERR_NOT_POSITIVE_DEFINITE = -2, /**< A covariance (P or S) is not positive-definite. */
-    KF_ERR_MODEL_FAILED = -3           /**< A user-supplied model callback returned non-zero. */
+    KF_ERR_MODEL_FAILED = -3,          /**< A user-supplied model callback returned non-zero. */
+    KF_ERR_OVERFLOW = -4               /**< A fixed-point value left the range of its Q format. */
 } kf_status;
 
 /**

@@ -29,11 +29,11 @@ int main(void) {
         }
     }
 
-    const float *x = filter_x();
+    const unsigned char *x = filter_x();
     sh_puts("state:");
     for (int i = 0; i < S2_N; ++i) {
         uint32_t bits;
-        memcpy(&bits, &x[i], sizeof bits);
+        memcpy(&bits, x + (4 * i), sizeof bits);
         sh_puts(" ");
         sh_put_hex(bits);
     }

@@ -21,6 +21,17 @@ typedef struct {
     kf_real P0[KF_MAX_STATE * KF_MAX_STATE];
     kf_real *truth; /* trials * steps * n; NULL when the data is all zero */
     kf_real *z;     /* trials * steps * m; NULL when the data is all zero */
+
+    /* The model and measurements in the fixed-point Q format (kf_fixed.h),
+     * converted at load time; fx_ok is 0 if a value does not fit. */
+    int fx_ok;
+    kf_fx fx_F[KF_MAX_STATE * KF_MAX_STATE];
+    kf_fx fx_H[KF_MAX_MEAS * KF_MAX_STATE];
+    kf_fx fx_Q[KF_MAX_STATE * KF_MAX_STATE];
+    kf_fx fx_R[KF_MAX_MEAS * KF_MAX_MEAS];
+    kf_fx fx_x0[KF_MAX_STATE];
+    kf_fx fx_P0[KF_MAX_STATE * KF_MAX_STATE];
+    kf_fx *fx_z; /* trials * steps * m; NULL for "data zero" or when !fx_ok */
 } scenario;
 
 /* Loads <dir>/<id>.txt. Returns 0, or -1 with a message on stderr. */

@@ -33,6 +33,7 @@ target_compile_definitions(bench PRIVATE
     TINYEKF_COMMIT="${TINYEKF_COMMIT}"
     KF_VECTORS_DIR="${KF_TESTS_DIR}/vectors")
 target_compile_options(bench PRIVATE -Wall -Wextra)
+
 # Third-party header: non-C99 empty initializers and unused statics.
 set_source_files_properties(
     runners/tinyekf_2x1.c runners/tinyekf_4x2.c runners/tinyekf_15x6.c

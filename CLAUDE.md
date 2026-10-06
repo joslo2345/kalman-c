@@ -50,6 +50,13 @@ Implementation conventions:
   - NumPy's float32 QR silently computes in float64, so it is not a valid float32 reference.
   - Bierman/Thornton UD forms every new variance from ratios and sums of non-negative terms. It beats the Joseph form by up to about 800× at tiny R, and `test_sqrt_accuracy` guards that.
   - `kfi_ud_factor`: with `psd == 0` it requires only d > 0. A relative tolerance there wrongly rejected S5's P0, where a 1e-6 bias variance sits next to variances of 1. With `psd != 0`, a near-zero pivot is accepted only if its column is negligible, and it keeps tiny positive values.
+- **Fixed-point filter (`src/kf_fixed.c`, `kf_fx_*`):**
+  - It's integer-only, with no `kf_real` and no `kf_linalg_impl.h`.
+  - Products are exact `int64_t` values with 2F fractional bits, accumulated with checked `wide_add` and `wide_sub` and rounded once (`round_shift`).
+  - It never right-shifts a negative number (implementation-defined in C99) and never negates a sum (`INT64_MIN`); use `wide_sub`.
+  - Every narrowing goes through `narrow()`, which sets `ovf`. Any `ovf` makes the call return `KF_ERR_OVERFLOW` before it commits.
+  - Use the `KF_FX_FRAC` CMake option (applied PUBLIC), never a per-target define: headers and library must agree. The bench build defaults to 18.
+  - 64-bit division (`div_wide`) is a library call on Cortex-M. It's the main cost on the M3.
 - Filter cores (`kf_core_*`, `sr_core_*`) re-check `n` and `m` themselves: model callbacks receive `ctx`, which may alias the filter state.
 - Specialized and generic builds agree to rounding, not bit-for-bit, because constant sizes change vectorization and FMA contraction. Tests use tolerances, so both pass. The EKF-vs-KF bit-identity test still holds, since both share one core.
 - `kf_linalg` outputs must not alias their inputs, except where the header says they may.
@@ -159,6 +166,12 @@ python3 scripts/run_embedded.py build-fw >> results/results.csv   # needs SDKROO
   - `instructions_per_step` is the difference in instruction count, divided by 1,000.
   - Flash and RAM come from `arm-none-eabi-size` on the 1000-step image. `stack_bytes` comes from the painted-stack high-water mark.
 - **It is instructions, not cycles.** QEMU doesn't model the DWT counter, pipeline timing or flash wait states, so the guide's `cycles_per_step` needs a real board.
+- Two firmware targets:
+  - `fw_*`: STM32F405, Cortex-M4F, QEMU `netduinoplus2`.
+  - `fw_m3_*`: STM32F205, Cortex-M3 with no FPU (software float), QEMU `netduino2`.
+
+  `run_embedded.py` keeps their rows apart with a `@m3` suffix in the precision column. Fixed-point rows use precision `q<F>`.
+- `fw_data.h` holds both float and Q-format (`s2_fx_*`) copies of S2. Its arrays are `static`, so each translation unit has its own copy: never compare pointers into them across files. The fixed-point adapter keeps its own step counter for that reason.
 - Firmware is built with `KF_MAX_STATE=4` and `KF_MAX_MEAS=2`, the same as TinyEKF's fixed 4×2.
 - GCC with `-std=c99` doesn't fuse multiply-adds, so the specialized and generic firmware are bit-identical, unlike on desktop clang.
 

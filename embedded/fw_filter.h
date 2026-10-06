@@ -5,6 +5,6 @@
 
 void filter_init(void);
 int filter_step(const float *z); /* predict + update; 0 on success */
-const float *filter_x(void);     /* current state estimate (4 values) */
+const void *filter_x(void);      /* state estimate: 4 words, float or Q-format int32 */
 
 #endif

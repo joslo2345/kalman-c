@@ -2,7 +2,7 @@
 
 Kalman filters for microcontrollers, in plain C99: no heap, no surprises, and numbers to back it up.
 
-> **Status:** v0.1.0. The linear KF, EKF and UKF are implemented and tested against TinyEKF and a textbook filter, in `float` and `double`. The square-root variant and fixed-point support are planned; see `kalman-c-repo-guide.md`.
+> **Status:** v0.1.0 is released. Since then, `main` has added a square-root (UD) filter and a fixed-point filter, so every step of `kalman-c-repo-guide.md` is now implemented.
 
 ## Features
 
@@ -10,6 +10,10 @@ Kalman filters for microcontrollers, in plain C99: no heap, no surprises, and nu
 - **Numerically robust.** The Joseph-form covariance update and Cholesky solves keep P symmetric positive-definite. On an ill-conditioned problem, the textbook filter fails at its first step in `float`; kalman-c runs 1,000,000 steps.
 - **Linear KF, EKF and UKF** share one state struct and one calling pattern.
 - **Square-root (UD) KF and EKF** (`kf_sqrt.h`) for badly conditioned problems in `float`. It uses Bierman's update and Thornton's predict. With very precise sensors, it keeps small variances accurate where the Joseph form loses digits: at R = 1e-10 in `float`, its error is 2.8e-7 against the Joseph form's 1.4e-4. It costs about 1.9–2.9× more per step.
+- **Fixed-point KF** (`kf_fixed.h`) for microcontrollers without an FPU. It uses only integer arithmetic: 32-bit Q-format values, 64-bit exact products that are rounded once, and an integer square root.
+  - Overflow returns `KF_ERR_OVERFLOW` and leaves the state unchanged; it never wraps around or saturates.
+  - On an emulated Cortex-M3 with no FPU, it runs 1.9× fewer instructions than the float filter on software floating point. On a Cortex-M4F with a hardware FPU, the float filter is faster.
+  - One Q format serves every value, so choose `KF_FX_FRAC` for your problem's range and resolution (see the header).
 - **Errors are returned, never silent.** NaN or Inf inputs, a singular innovation covariance, and failing model callbacks all return an error code, and leave the filter state byte-for-byte unchanged.
 - **Configurable at compile time:** `float` or `double`, the maximum sizes, and optional constant-size specializations (`KF_SPECIALIZE`) that run within 15% of TinyEKF, and faster on the 15-state problem.
 - **Diagnostics.** The normalized innovation squared (NIS) after every update. Monte Carlo tests check NIS and NEES against their chi-squared bounds.
@@ -108,6 +112,11 @@ What it shows so far:
   - The specialized build runs the fewest instructions: 3,757 per step, against 4,764 for the textbook filter and 6,608 for TinyEKF. It costs about 1.7 KB more flash than the default build (13,860 vs 12,188 bytes).
   - TinyEKF's count includes software double-precision math. It calls `sqrt()` on a double, and the M4F has only a single-precision FPU. kalman-c links no double-precision code.
   - kalman-c also uses the least stack of the three filters: 512 bytes, against 688 for the textbook filter and 740 for TinyEKF.
+- **No FPU (STM32F205 / Cortex-M3, QEMU `netduino2`; rows marked `@m3`):** float filters run on software floating point.
+  - The fixed-point filter (`q20`, Q11.20) runs about 14,000 instructions per step, against about 26,300 for the float filter and about 24,800 for TinyEKF.
+  - On the M4F, the same fixed-point code runs about 14,300, which is 2.7× more than the hardware-float filter. So use fixed point only on parts without an FPU.
+- **Fixed point on the desktop scenarios** (`q18`, Q13.18, so the S1 and S2 positions of up to about 5,254 fit): RMSE matches the float filter on S1 and S2.
+  - S5 cannot be represented: its 1e-6 initial bias variance is below Q13.18's resolution of 3.8e-6 and rounds to zero, which leaves P singular. Problems with such a dynamic range need floating point or rescaled units.
 
 <!-- BENCH:START -->
 | Scenario | Filter | Precision | Metric | kalman-c | kalman-c-specialized | naive | tinyekf | Ours vs best other |

@@ -31,6 +31,7 @@ int run_ours_kf(const scenario *sc, run_result *out);
 int run_ours_ekf(const scenario *sc, run_result *out);
 int run_ours_ukf(const scenario *sc, run_result *out);
 int run_ours_sr(const scenario *sc, run_result *out); /* square-root (UD) KF, linear only */
+int run_ours_fx(const scenario *sc, run_result *out); /* fixed-point KF, linear only */
 int run_naive(const scenario *sc, run_result *out);
 int run_tinyekf(const scenario *sc, run_result *out); /* EKF; dims 2x1, 4x2 and 15x6 */
 

@@ -16,16 +16,21 @@ option(KF_BUILD_BENCH "Build the comparison benchmarks" OFF)
 option(KF_BUILD_EXAMPLES "Build the worked examples" ON)
 set(KF_MAX_STATE "" CACHE STRING "Override the maximum state size (default 12)")
 set(KF_MAX_MEAS "" CACHE STRING "Override the maximum measurement size (default 6)")
+set(KF_FX_FRAC "" CACHE STRING "Fixed-point fractional bits, 8..28 (default 20; see kf_fixed.h)")
 set(KF_SPECIALIZE "" CACHE STRING
     "Compile-time KF/EKF specializations, e.g. KF_SIZE(4,2)KF_SIZE(15,6) (see kf_config.h)")
 
-# Scenario S5 has 15 states and 6 measurements.
+# Scenario S5 has 15 states and 6 measurements, and S1/S2 positions reach about
+# 5254, which needs Q13.18 (range +-8192) in fixed point.
 if(KF_BUILD_BENCH AND KF_MAX_STATE STREQUAL "")
     set(KF_MAX_STATE 15)
 endif()
+if(KF_BUILD_BENCH AND KF_FX_FRAC STREQUAL "")
+    set(KF_FX_FRAC 18)
+endif()
 
 add_library(kalman STATIC
-    src/kf_linalg.c src/kf_linear.c src/kf_ekf.c src/kf_ukf.c src/kf_sqrt.c)
+    src/kf_linalg.c src/kf_linear.c src/kf_ekf.c src/kf_ukf.c src/kf_sqrt.c src/kf_fixed.c)
 target_include_directories(kalman PUBLIC include)
 target_compile_options(kalman PRIVATE -Wall -Wextra -Wpedantic)
 
@@ -43,6 +48,9 @@ if(NOT KF_MAX_STATE STREQUAL "")
 endif()
 if(NOT KF_MAX_MEAS STREQUAL "")
     target_compile_definitions(kalman PUBLIC KF_MAX_MEAS=${KF_MAX_MEAS})
+endif()
+if(NOT KF_FX_FRAC STREQUAL "")
+    target_compile_definitions(kalman PUBLIC KF_FX_FRAC=${KF_FX_FRAC})
 endif()
 # Passed through target_compile_definitions, which escapes the parentheses for
 # the shell. Putting it in CMAKE_C_FLAGS silently drops it with Makefiles.

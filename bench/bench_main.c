@@ -7,13 +7,14 @@
  *   S1, S2, S5  KF   time_per_step (median of 30 timed runs after a warm-up), rmse,
  *                    and max_abs_diff of each baseline from kalman-c
  *               SRKF the same for kalman-c's square-root (UD) filter
+ *               KF in precision "qF" for the fixed-point filter (KF_FX_FRAC = F)
  *   S3          EKF/UKF  rmse and nees, averaged over all trials
  *   S4          KF   steps_to_failure (equal to the scenario length if it never failed)
  *
  * A library that doesn't support a scenario or filter writes no row; the
  * table shows it as n/a. A build with KF_SPECIALIZE reports as kalman-c-specialized.
  */
-#define _POSIX_C_SOURCE 199309L
+#define _POSIX_C_SOURCE 200112L
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +31,10 @@ typedef struct {
     const char *version;
     const char *filter;
     runner_fn run;
+    const char *precision; /* NULL: KF_PRECISION_NAME */
 } library;
+
+static char fx_precision[8];
 
 static const char *env = "unknown,unknown,unknown,unknown,unknown";
 
@@ -48,7 +52,7 @@ static int cmp_double(const void *a, const void *b) {
 static void row(const library *lib, const scenario *sc, const char *metric, double value,
                 const char *unit) {
     printf("%s,%s,%s,%s,%s,%s,%.6g,%s,%s\n", lib->name, lib->version, sc->id, lib->filter,
-           KF_PRECISION_NAME, metric, value, unit, env);
+           lib->precision != NULL ? lib->precision : KF_PRECISION_NAME, metric, value, unit, env);
 }
 
 /* Median nanoseconds per step over REPEATS timed runs, after one warm-up. */
@@ -90,7 +94,9 @@ static void bench_linear(const scenario *sc, const library *libs, int nlibs) {
         if (rc != RUN_OK)
             continue;
         if (res.steps_to_failure >= 0) {
-            fprintf(stderr, "bench: %s failed on %s at step %ld; skipping\n", libs[l].name, sc->id,
+            fprintf(stderr, "bench: %s %s (%s) failed on %s at step %ld; skipping\n", libs[l].name,
+                    libs[l].filter,
+                    libs[l].precision != NULL ? libs[l].precision : KF_PRECISION_NAME, sc->id,
                     res.steps_to_failure);
             continue;
         }
@@ -148,15 +154,16 @@ static int load(scenario *sc, const char *dir, const char *id) {
 int main(int argc, char **argv) {
     const char *dir = argc > 2 ? argv[2] : KF_VECTORS_DIR;
     const library linear_libs[] = {
-        {KF_BENCH_NAME, KALMAN_C_VERSION, "KF", run_ours_kf},
-        {"naive", "textbook", "KF", run_naive},
-        {"tinyekf", TINYEKF_COMMIT, "KF", run_tinyekf},
-        {KF_BENCH_NAME, KALMAN_C_VERSION, "SRKF", run_ours_sr},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "KF", run_ours_kf, NULL},
+        {"naive", "textbook", "KF", run_naive, NULL},
+        {"tinyekf", TINYEKF_COMMIT, "KF", run_tinyekf, NULL},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "SRKF", run_ours_sr, NULL},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "KF", run_ours_fx, fx_precision},
     };
     const library nonlinear_libs[] = {
-        {KF_BENCH_NAME, KALMAN_C_VERSION, "EKF", run_ours_ekf},
-        {KF_BENCH_NAME, KALMAN_C_VERSION, "UKF", run_ours_ukf},
-        {"tinyekf", TINYEKF_COMMIT, "EKF", run_tinyekf},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "EKF", run_ours_ekf, NULL},
+        {KF_BENCH_NAME, KALMAN_C_VERSION, "UKF", run_ours_ukf, NULL},
+        {"tinyekf", TINYEKF_COMMIT, "EKF", run_tinyekf, NULL},
     };
     const int nlinear = (int)(sizeof linear_libs / sizeof *linear_libs);
     const int nnonlinear = (int)(sizeof nonlinear_libs / sizeof *nonlinear_libs);
@@ -165,6 +172,7 @@ int main(int argc, char **argv) {
 
     if (argc > 1)
         env = argv[1];
+    snprintf(fx_precision, sizeof fx_precision, "q%d", KF_FX_FRAC);
     if (sc == NULL)
         return 1;
 

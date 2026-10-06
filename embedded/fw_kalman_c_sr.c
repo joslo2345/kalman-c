@@ -20,6 +20,6 @@ int filter_step(const float *z) {
     return kf_sr_update(&sr, z, s2_H) != KF_OK;
 }
 
-const float *filter_x(void) {
+const void *filter_x(void) {
     return sr.x;
 }

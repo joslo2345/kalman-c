@@ -23,6 +23,6 @@ int filter_step(const float *z) {
     return !ekf_update(&ekf, z, hx, s2_H, s2_R);
 }
 
-const float *filter_x(void) {
+const void *filter_x(void) {
     return ekf.x;
 }

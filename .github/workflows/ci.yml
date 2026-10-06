@@ -13,6 +13,13 @@ jobs:
         compiler: [gcc, clang]
         precision: [float, double]
         specialize: ['', 'KF_SIZE(1,1)KF_SIZE(2,1)KF_SIZE(4,2)']
+        fxfrac: ['']
+        include:
+          # Fixed point in a non-default Q format.
+          - compiler: gcc
+            precision: float
+            specialize: ''
+            fxfrac: '16'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,6 +31,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=Debug
           -DKF_USE_DOUBLE=${{ matrix.precision == 'double' && 'ON' || 'OFF' }}
           "-DKF_SPECIALIZE=${{ matrix.specialize }}"
+          "-DKF_FX_FRAC=${{ matrix.fxfrac }}"
           -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
           -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
       - name: Build

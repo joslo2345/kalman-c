@@ -1,9 +1,9 @@
-"""Run the Cortex-M4F firmware under QEMU and print benchmark CSV rows.
+"""Run the Cortex-M firmware under QEMU and print benchmark CSV rows.
 
 Usage: python scripts/run_embedded.py <build-fw dir> [--plugin path] [--commit HASH]
 
-For each library this runs fw_<lib>_1000.elf and fw_<lib>_0.elf on QEMU's
-netduinoplus2 (STM32F405) with the icount plugin, and reports:
+For each library and target this runs <prefix><lib>_1000.elf and
+<prefix><lib>_0.elf with the icount plugin, and reports:
 
   instructions_per_step  (icount(1000) - icount(0)) / 1000, exact for QEMU's
                          instruction stream. QEMU does not model pipeline
@@ -19,17 +19,28 @@ import argparse
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 from datetime import date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LIBS = [  # (firmware name, library name in the table, version source, filter)
-    ("kalman_c", "kalman-c", "kalman", "KF"),
-    ("kalman_c_specialized", "kalman-c-specialized", "kalman", "KF"),
-    ("kalman_c_sr", "kalman-c", "kalman", "SRKF"),
-    ("naive", "naive", "naive", "KF"),
-    ("tinyekf", "tinyekf", "tinyekf", "KF"),
+# Targets: image prefix, QEMU machine, CPU label, and the suffix that keeps
+# their rows apart in the table's precision column.
+TARGETS = {
+    "m4": ("fw_", "netduinoplus2", "cortex-m4f (qemu netduinoplus2)", ""),
+    "m3": ("fw_m3_", "netduino2", "cortex-m3 no FPU (qemu netduino2)", "@m3"),
+}
+LIBS = [  # (target, firmware name, library name, version source, filter, precision)
+    ("m4", "kalman_c", "kalman-c", "kalman", "KF", "float32"),
+    ("m4", "kalman_c_specialized", "kalman-c-specialized", "kalman", "KF", "float32"),
+    ("m4", "kalman_c_sr", "kalman-c", "kalman", "SRKF", "float32"),
+    ("m4", "kalman_c_fixed", "kalman-c", "kalman", "KF", "q20"),
+    ("m4", "naive", "naive", "naive", "KF", "float32"),
+    ("m4", "tinyekf", "tinyekf", "tinyekf", "KF", "float32"),
+    ("m3", "kalman_c", "kalman-c", "kalman", "KF", "float32"),
+    ("m3", "kalman_c_fixed", "kalman-c", "kalman", "KF", "q20"),
+    ("m3", "tinyekf", "tinyekf", "tinyekf", "KF", "float32"),
 ]
 STEPS = 1000
 
@@ -52,9 +63,9 @@ def build_plugin(out_dir):
     return path
 
 
-def qemu(elf, plugin):
+def qemu(elf, plugin, machine):
     out = subprocess.run(
-        ["qemu-system-arm", "-M", "netduinoplus2", "-nographic", "-monitor", "none",
+        ["qemu-system-arm", "-M", machine, "-nographic", "-monitor", "none",
          "-serial", "none", "-semihosting-config", "enable=on,target=native",
          "-kernel", elf, "-plugin", plugin, "-d", "plugin"],
         capture_output=True, text=True, timeout=600)
@@ -96,37 +107,44 @@ def main():
         "tinyekf": run(["git", "-C", os.path.join(ROOT, "tests", "baselines", "tinyekf"),
                         "rev-parse", "--short", "HEAD"]).stdout.strip(),
     }
-    env = ",".join([commit, "cortex-m4f (qemu netduinoplus2)", "bare-metal",
-                    f"arm-none-eabi-gcc-{gcc_version}+qemu-{qemu_version}", date.today().isoformat()])
+    toolchain = f"arm-none-eabi-gcc-{gcc_version}+qemu-{qemu_version}"
 
-    def elf(name, steps):
-        return os.path.join(bdir, f"fw_{name}_{steps}.elf")
+    def elf(target, name, steps):
+        return os.path.join(bdir, f"{TARGETS[target][0]}{name}_{steps}.elf")
 
-    base_icount, _, _ = qemu(elf("empty", STEPS), plugin)
-    base_icount0, _, _ = qemu(elf("empty", 0), plugin)
-    base_flash, base_ram = size(elf("empty", STEPS), size_tool)
-    print(f"# harness only (fw_empty): flash {base_flash} B, ram {base_ram} B, "
-          f"{(base_icount - base_icount0) / STEPS:.1f} instructions per loop iteration",
-          file=sys.stderr)
+    for target, (_, machine, cpu, _) in TARGETS.items():
+        n1, _, _ = qemu(elf(target, "empty", STEPS), plugin, machine)
+        n0, _, _ = qemu(elf(target, "empty", 0), plugin, machine)
+        flash, ram = size(elf(target, "empty", STEPS), size_tool)
+        print(f"# {target} harness only (empty): flash {flash} B, ram {ram} B, "
+              f"{(n1 - n0) / STEPS:.1f} instructions per loop iteration", file=sys.stderr)
 
-    states = {}
-    for fw, lib, ver, filt in LIBS:
-        n1, state, stack = qemu(elf(fw, STEPS), plugin)
-        n0, _, _ = qemu(elf(fw, 0), plugin)
-        flash, ram = size(elf(fw, STEPS), size_tool)
-        states[f"{lib} {filt}"] = state
+    for target, fw, lib, ver, filt, precision in LIBS:
+        _, machine, cpu, suffix = TARGETS[target]
+        env = ",".join([commit, cpu, "bare-metal", toolchain, date.today().isoformat()])
+        n1, state, stack = qemu(elf(target, fw, STEPS), plugin, machine)
+        n0, _, _ = qemu(elf(target, fw, 0), plugin, machine)
+        flash, ram = size(elf(target, fw, STEPS), size_tool)
         rows = [("instructions_per_step", f"{(n1 - n0) / STEPS:.1f}", "instructions"),
                 ("flash_bytes", flash, "bytes"),
                 ("ram_bytes", ram, "bytes"),
                 ("stack_bytes", stack, "bytes")]
         for metric, value, unit in rows:
-            print(f"{lib},{versions[ver]},S2,{filt},float32,{metric},{value},{unit},{env}")
+            print(f"{lib},{versions[ver]},S2,{filt},{precision}{suffix},{metric},{value},{unit},{env}")
+        print(f"# {target} {lib} {filt} {precision}: final state {decode(state, precision)}", file=sys.stderr)
 
-    ref = states["kalman-c KF"]
-    for lib, state in states.items():
-        print(f"# {lib} final state: {' '.join(state)}"
-              f"{'' if state == ref else '  (differs from kalman-c in the last bits)'}",
-              file=sys.stderr)
+
+def decode(words, precision):
+    """Final state words as numbers: IEEE float32, or Q-format int32."""
+    values = []
+    for w in words:
+        u = int(w, 16)
+        if precision.startswith("q"):
+            frac = int(precision[1:])
+            values.append((u - (1 << 32) if u >= 1 << 31 else u) / (1 << frac))
+        else:
+            values.append(struct.unpack("<f", struct.pack("<I", u))[0])
+    return "[" + ", ".join(f"{v:.6g}" for v in values) + "]"
 
 
 if __name__ == "__main__":

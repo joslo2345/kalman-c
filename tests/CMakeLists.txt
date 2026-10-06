@@ -38,6 +38,7 @@ kf_add_test(test_ekf unit/test_ekf.c)
 kf_add_test(test_ukf unit/test_ukf.c)
 kf_add_test(test_errors unit/test_errors.c)
 kf_add_test(test_sqrt unit/test_sqrt.c)
+kf_add_test(test_fixed unit/test_fixed.c)
 # test_sqrt also checks the internal QR and PSD Cholesky kernels.
 target_include_directories(test_sqrt PRIVATE ${PROJECT_SOURCE_DIR}/src)
 

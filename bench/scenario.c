@@ -33,6 +33,28 @@ static int read_int(FILE *f, const char *expected, int *out) {
     return 0;
 }
 
+/* Fill the Q-format copies; fx_ok = 0 if any value is out of range. */
+static int to_fx(const kf_real *src, kf_fx *dst, size_t len) {
+    for (size_t i = 0; i < len; ++i) {
+        if (kf_fx_from_double((double)src[i], &dst[i]) != KF_OK) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static void scenario_convert_fx(scenario *sc) {
+    const size_t n = (size_t)sc->n, m = (size_t)sc->m;
+    sc->fx_ok = to_fx(sc->F, sc->fx_F, n * n) && to_fx(sc->H, sc->fx_H, m * n) &&
+                to_fx(sc->Q, sc->fx_Q, n * n) && to_fx(sc->R, sc->fx_R, m * m) &&
+                to_fx(sc->x0, sc->fx_x0, n) && to_fx(sc->P0, sc->fx_P0, n * n);
+    if (sc->fx_ok && sc->z != NULL) {
+        const size_t len = (size_t)sc->trials * (size_t)sc->steps * m;
+        sc->fx_z = malloc(len * sizeof *sc->fx_z);
+        sc->fx_ok = sc->fx_z != NULL && to_fx(sc->z, sc->fx_z, len);
+    }
+}
+
 int scenario_load(scenario *sc, const char *dir, const char *id) {
     char path[1024], tok[64], line[256];
     int version;
@@ -121,6 +143,7 @@ int scenario_load(scenario *sc, const char *dir, const char *id) {
         }
     }
     fclose(f);
+    scenario_convert_fx(sc);
     return 0;
 
 fail:
@@ -133,8 +156,10 @@ fail:
 void scenario_free(scenario *sc) {
     free(sc->truth);
     free(sc->z);
+    free(sc->fx_z);
     sc->truth = NULL;
     sc->z = NULL;
+    sc->fx_z = NULL;
 }
 
 const kf_real *scenario_truth(const scenario *sc, int trial, int k) {

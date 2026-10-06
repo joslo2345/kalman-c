@@ -54,9 +54,11 @@ __attribute__((noreturn, used)) void fw_reset_c(void) {
     for (dst = &_sbss; dst < &_ebss; ++dst)
         *dst = 0;
 
+#if defined(__ARM_FP)
     /* Enable CP10 and CP11 (the FPU) before any floating-point code runs. */
     *(volatile uint32_t *)0xE000ED88u |= 0xFu << 20;
     __asm__ volatile("dsb\n isb" ::: "memory");
+#endif
 
     sh_exit(main());
 }

@@ -23,6 +23,6 @@ int filter_step(const float *z) {
     return 0;
 }
 
-const float *filter_x(void) {
+const void *filter_x(void) {
     return x;
 }
